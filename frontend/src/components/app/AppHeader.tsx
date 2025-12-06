@@ -3,7 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../store/auth";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronDown, LogOut, Moon, Sun, Menu, X, FolderKanban, CheckSquare, Layout, Heart } from "lucide-react";
+import {
+  ChevronDown,
+  LogOut,
+  Moon,
+  Sun,
+  Menu,
+  X,
+  FolderKanban,
+  CheckSquare,
+  Layout,
+  Heart,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 
@@ -30,7 +41,10 @@ export const AppHeader = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -49,8 +63,7 @@ export const AppHeader = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-(--border) bg-(--card)">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-        {/* Logo */}
-        <Link href="/projects" className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-(--primary) text-(--primary-foreground) font-bold text-base">
             H
           </div>
@@ -59,7 +72,6 @@ export const AppHeader = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
@@ -81,7 +93,6 @@ export const AppHeader = () => {
           })}
         </nav>
 
-        {/* Desktop Actions */}
         <div className="flex items-center gap-2">
           {mounted && (
             <button
@@ -94,7 +105,6 @@ export const AppHeader = () => {
             </button>
           )}
 
-          {/* User Dropdown - Desktop */}
           <div className="hidden sm:block relative" ref={dropdownRef}>
             <button
               type="button"
@@ -104,14 +114,25 @@ export const AppHeader = () => {
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-(--primary) text-(--primary-foreground) text-xs font-bold">
                 {initials}
               </div>
-              <span className="max-w-[100px] truncate hidden md:block">{displayName}</span>
-              <ChevronDown size={14} className={`transition-transform text-(--muted) ${open ? "rotate-180" : ""}`} />
+              <span className="max-w-[100px] truncate hidden md:block">
+                {displayName}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`transition-transform text-(--muted) ${
+                  open ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {open && (
               <div className="absolute right-0 mt-2 w-56 rounded-xl border border-(--border) bg-(--card) py-1 shadow-lg">
                 <div className="px-4 py-3 border-b border-(--border)">
-                  <p className="text-sm font-medium text-(--foreground) truncate">{displayName}</p>
-                  <p className="text-xs text-(--muted) truncate mt-0.5">{user?.email}</p>
+                  <p className="text-sm font-medium text-(--foreground) truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-(--muted) truncate mt-0.5">
+                    {user?.email}
+                  </p>
                 </div>
                 <div className="py-1">
                   <button
@@ -127,7 +148,6 @@ export const AppHeader = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             type="button"
             className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-(--border) text-(--muted) transition-colors hover:bg-(--card-hover) hover:text-(--foreground)"
@@ -139,22 +159,21 @@ export const AppHeader = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-(--border) bg-(--card)">
           <div className="px-4 py-4">
-            {/* User Info */}
             <div className="flex items-center gap-3 pb-4 mb-4 border-b border-(--border)">
               <div className="flex items-center justify-center w-11 h-11 rounded-full bg-(--primary) text-(--primary-foreground) font-bold">
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-(--foreground) truncate">{displayName}</p>
+                <p className="text-sm font-medium text-(--foreground) truncate">
+                  {displayName}
+                </p>
                 <p className="text-xs text-(--muted) truncate">{user?.email}</p>
               </div>
             </div>
 
-            {/* Navigation */}
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
@@ -177,7 +196,6 @@ export const AppHeader = () => {
               })}
             </nav>
 
-            {/* Actions */}
             <div className="mt-4 pt-4 border-t border-(--border) space-y-1">
               {mounted && (
                 <button

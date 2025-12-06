@@ -1,6 +1,8 @@
 import { HealthLog } from "../models/healthLogModel.js";
 import { appError } from "../errors/appError.js";
 import { healthErrors } from "../constants/healthConstants.js";
+import { updateStreakOnActivity } from "./streakService.js";
+import { logActivity } from "./activityService.js";
 
 export const createLog = async ({
   userId,
@@ -24,6 +26,8 @@ export const createLog = async ({
     metadata: metadata || {},
     date: date ? new Date(date) : new Date(),
   });
+  await updateStreakOnActivity(userId);
+  await logActivity(userId, "health.log.created", { logId: log.id, type });
   return log;
 };
 

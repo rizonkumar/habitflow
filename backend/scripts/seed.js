@@ -7,6 +7,7 @@ import { HealthLog } from "../src/models/healthLogModel.js";
 import { initBoard } from "../src/services/boardService.js";
 import { createTodo } from "../src/services/todoService.js";
 import { createLog } from "../src/services/healthService.js";
+import { updateStreakOnActivity } from "../src/services/streakService.js";
 
 const seed = async () => {
   await connectDatabase();
@@ -80,6 +81,9 @@ const seed = async () => {
   } else {
     console.log("Sample health log already exists");
   }
+
+  await updateStreakOnActivity(user.id);
+  console.log("Seeded streak for demo user");
 
   console.log("Seed complete. Demo user password:", password);
 };
