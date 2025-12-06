@@ -2,14 +2,22 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../store/auth";
-import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut, Moon, Sun, UserRound, Menu, X } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { ChevronDown, LogOut, Moon, Sun, Menu, X, FolderKanban, CheckSquare, Layout, Heart } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+
+const navItems = [
+  { href: "/projects", label: "Projects", icon: FolderKanban },
+  { href: "/todos", label: "Todos", icon: CheckSquare },
+  { href: "/board", label: "Board", icon: Layout },
+  { href: "/health", label: "Health", icon: Heart },
+];
 
 export const AppHeader = () => {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -20,7 +28,6 @@ export const AppHeader = () => {
     setMounted(true);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -41,106 +48,159 @@ export const AppHeader = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b border-(--border) bg-(--card)">
-      <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex items-center justify-between h-16 px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-(--primary) text-(--primary-foreground) font-bold text-sm">
+        <Link href="/projects" className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-(--primary) text-(--primary-foreground) font-bold text-base">
             H
           </div>
-          <span className="text-lg font-semibold text-(--foreground) hidden sm:block">HabitFlow</span>
+          <span className="text-lg font-semibold text-(--foreground) hidden sm:block">
+            HabitFlow
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden sm:flex items-center gap-3">
-          {/* Theme Toggle */}
+        <nav className="hidden lg:flex items-center gap-1">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-(--primary)/10 text-(--primary)"
+                    : "text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover)"
+                }`}
+              >
+                <Icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Desktop Actions */}
+        <div className="flex items-center gap-2">
           {mounted && (
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center justify-center w-9 h-9 rounded-lg border border-(--border) bg-(--card) text-(--foreground) transition-colors hover:bg-(--card-hover) focus-ring"
+              className="flex items-center justify-center w-9 h-9 rounded-lg border border-(--border) text-(--muted) transition-colors hover:bg-(--card-hover) hover:text-(--foreground)"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           )}
 
-          {/* User Menu */}
-          <div className="relative" ref={dropdownRef}>
+          {/* User Dropdown - Desktop */}
+          <div className="hidden sm:block relative" ref={dropdownRef}>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg border border-(--border) bg-(--card) px-3 py-2 text-sm font-medium text-(--foreground) transition-colors hover:bg-(--card-hover) focus-ring"
+              className="flex items-center gap-2 rounded-lg border border-(--border) px-2.5 py-1.5 text-sm font-medium text-(--foreground) transition-colors hover:bg-(--card-hover)"
               onClick={() => setOpen((v) => !v)}
             >
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--primary) text-(--primary-foreground) text-xs font-bold">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-(--primary) text-(--primary-foreground) text-xs font-bold">
                 {initials}
               </div>
-              <span className="max-w-[120px] truncate">{displayName}</span>
-              <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+              <span className="max-w-[100px] truncate hidden md:block">{displayName}</span>
+              <ChevronDown size={14} className={`transition-transform text-(--muted) ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg border border-(--border) bg-(--card) py-1 shadow-lg">
-                <div className="px-4 py-2 border-b border-(--border)">
+              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-(--border) bg-(--card) py-1 shadow-lg">
+                <div className="px-4 py-3 border-b border-(--border)">
                   <p className="text-sm font-medium text-(--foreground) truncate">{displayName}</p>
-                  <p className="text-xs text-(--muted) truncate">{user?.email}</p>
+                  <p className="text-xs text-(--muted) truncate mt-0.5">{user?.email}</p>
                 </div>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-(--destructive) transition-colors hover:bg-(--card-hover)"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={16} />
-                  Log out
-                </button>
+                <div className="py-1">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-(--destructive) transition-colors hover:bg-(--card-hover)"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={16} />
+                    Log out
+                  </button>
+                </div>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-(--border) bg-(--card) text-(--foreground) transition-colors hover:bg-(--card-hover)"
-          onClick={() => setMobileMenuOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg border border-(--border) text-(--muted) transition-colors hover:bg-(--card-hover) hover:text-(--foreground)"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-(--border) bg-(--card) px-4 py-3">
-          <div className="flex items-center gap-3 pb-3 border-b border-(--border)">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-(--primary) text-(--primary-foreground) font-bold">
-              {initials}
+        <div className="lg:hidden border-t border-(--border) bg-(--card)">
+          <div className="px-4 py-4">
+            {/* User Info */}
+            <div className="flex items-center gap-3 pb-4 mb-4 border-b border-(--border)">
+              <div className="flex items-center justify-center w-11 h-11 rounded-full bg-(--primary) text-(--primary-foreground) font-bold">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-(--foreground) truncate">{displayName}</p>
+                <p className="text-xs text-(--muted) truncate">{user?.email}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-(--foreground) truncate">{displayName}</p>
-              <p className="text-xs text-(--muted) truncate">{user?.email}</p>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1 pt-3">
-            {mounted && (
+
+            {/* Navigation */}
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-(--primary)/10 text-(--primary)"
+                        : "text-(--foreground) hover:bg-(--card-hover)"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Actions */}
+            <div className="mt-4 pt-4 border-t border-(--border) space-y-1">
+              {mounted && (
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-(--foreground) rounded-lg transition-colors hover:bg-(--card-hover)"
+                  onClick={() => {
+                    setTheme(theme === "dark" ? "light" : "dark");
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
+              )}
               <button
                 type="button"
-                className="flex items-center gap-3 px-3 py-2.5 text-sm text-(--foreground) rounded-lg transition-colors hover:bg-(--card-hover)"
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                  setMobileMenuOpen(false);
-                }}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-(--destructive) rounded-lg transition-colors hover:bg-(--card-hover)"
+                onClick={handleLogout}
               >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-                {theme === "dark" ? "Light mode" : "Dark mode"}
+                <LogOut size={18} />
+                Log out
               </button>
-            )}
-            <button
-              type="button"
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-(--destructive) rounded-lg transition-colors hover:bg-(--card-hover)"
-              onClick={handleLogout}
-            >
-              <LogOut size={18} />
-              Log out
-            </button>
+            </div>
           </div>
         </div>
       )}
