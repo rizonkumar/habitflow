@@ -1,23 +1,16 @@
-import dotenv from "dotenv";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import morgan from "morgan";
+import { appConfig } from "./config/env.js";
+import { connectDatabase } from "./config/database.js";
+import { createApp } from "./app.js";
 
-dotenv.config();
+const start = async () => {
+  await connectDatabase();
+  const app = createApp();
+  app.listen(appConfig.port, () => {
+    console.log(`API running on port ${appConfig.port}`);
+  });
+};
 
-const app = express();
-
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-app.use(morgan("dev"));
-
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`API running on port ${port}`);
+start().catch((error) => {
+  console.error("Failed to start server:", error.message);
+  process.exit(1);
 });
