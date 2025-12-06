@@ -8,7 +8,7 @@ type TodoState = {
   items: Todo[];
   loading: boolean;
   error: string | null;
-  fetchTodos: (projectId?: string | null, status?: Todo["status"]) => Promise<void>;
+  fetchTodos: (projectId?: string | null, status?: Todo["status"], from?: string, to?: string) => Promise<void>;
   addTodo: (payload: {
     projectId?: string | null;
     title: string;
@@ -34,7 +34,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   loading: false,
   error: null,
 
-  fetchTodos: async (projectId, status) => {
+  fetchTodos: async (projectId, status, from, to) => {
     const token = useAuthStore.getState().token;
     const request = withToken(token);
     set({ loading: true, error: null });
@@ -42,6 +42,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const params = new URLSearchParams();
       if (projectId) params.append("projectId", projectId);
       if (status) params.append("status", status);
+      if (from) params.append("from", from);
+      if (to) params.append("to", to);
       const qs = params.toString();
       const data = await request<{ todos: Todo[] }>(
         `/api/todos${qs ? `?${qs}` : ""}`,

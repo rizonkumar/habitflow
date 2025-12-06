@@ -51,12 +51,22 @@ export const createTodo = async ({
   return todo;
 };
 
-export const listTodos = async ({ projectId, ownerId, status }) => {
-  // If project specified, validate access; otherwise list by owner
+export const listTodos = async ({ projectId, ownerId, status, from, to }) => {
   await ensureProjectAccess(projectId, ownerId);
   const criteria = { ownerId };
   if (projectId) criteria.projectId = projectId;
   if (status) criteria.status = status;
+
+  if (from || to) {
+    criteria.dueDate = {};
+    if (from) {
+      criteria.dueDate.$gte = new Date(`${from}T00:00:00.000Z`);
+    }
+    if (to) {
+      criteria.dueDate.$lte = new Date(`${to}T23:59:59.999Z`);
+    }
+  }
+
   return Todo.find(criteria).sort({ createdAt: -1 });
 };
 

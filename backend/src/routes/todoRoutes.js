@@ -30,6 +30,14 @@ const listSchema = z.object({
   query: z.object({
     projectId: z.string().min(1).optional(),
     status: z.enum(["todo", "completed"]).optional(),
+    from: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    to: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   }),
 });
 
@@ -74,6 +82,8 @@ router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
       projectId: req.validated.query.projectId,
       ownerId: req.userId,
       status: req.validated.query.status,
+      from: req.validated.query.from,
+      to: req.validated.query.to,
     });
     res.json({ todos: todos.map(serializeTodo) });
   } catch (error) {
