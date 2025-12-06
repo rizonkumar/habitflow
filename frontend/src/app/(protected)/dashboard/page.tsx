@@ -1,96 +1,198 @@
 "use client";
 
-import { CheckCircle, Layout, Activity, Sparkles } from "lucide-react";
+import Link from "next/link";
+import {
+  CheckCircle,
+  Layout,
+  Activity,
+  ArrowRight,
+  Calendar,
+  Target,
+  TrendingUp,
+  Zap,
+  Clock,
+  BarChart3,
+} from "lucide-react";
 import { useAuthStore } from "../../../store/auth";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const firstName = user?.name?.split(" ")[0] || "there";
 
+  const currentHour = new Date().getHours();
+  const greeting =
+    currentHour < 12 ? "Good morning" : currentHour < 18 ? "Good afternoon" : "Good evening";
+
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="rounded-xl border border-(--border) bg-(--card) p-5 sm:p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-(--primary)/10 text-(--primary)">
-            <Sparkles size={24} />
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-(--foreground)">
+            {greeting}, {firstName}
+          </h1>
+          <p className="mt-1 text-(--muted)">
+            Here&apos;s what&apos;s happening in your workspace today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-(--muted)">
+          <Clock size={16} />
+          <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-(--muted) uppercase tracking-wide">Tasks</span>
+            <div className="p-1.5 rounded-lg bg-(--primary)/10">
+              <CheckCircle size={14} className="text-(--primary)" />
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-(--foreground)">
-              Welcome back, {firstName}!
-            </h1>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">0</p>
+          <p className="text-xs text-(--muted)">completed today</p>
+        </div>
+
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-(--muted) uppercase tracking-wide">Projects</span>
+            <div className="p-1.5 rounded-lg bg-(--accent)/10">
+              <Layout size={14} className="text-(--accent)" />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">0</p>
+          <p className="text-xs text-(--muted)">active boards</p>
+        </div>
+
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-(--muted) uppercase tracking-wide">Streak</span>
+            <div className="p-1.5 rounded-lg bg-(--warning)/10">
+              <Zap size={14} className="text-(--warning)" />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">0</p>
+          <p className="text-xs text-(--muted)">days active</p>
+        </div>
+
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-(--muted) uppercase tracking-wide">Health</span>
+            <div className="p-1.5 rounded-lg bg-(--success)/10">
+              <Activity size={14} className="text-(--success)" />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">0</p>
+          <p className="text-xs text-(--muted)">logs this week</p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/todos"
+          className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-all hover:border-(--primary)/50 hover:bg-(--card-hover)"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-2.5 rounded-xl bg-(--primary) text-white">
+              <CheckCircle size={22} />
+            </div>
+            <ArrowRight
+              size={18}
+              className="text-(--muted) transition-transform group-hover:translate-x-1 group-hover:text-(--primary)"
+            />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-(--foreground)">Todos</h2>
+          <p className="mt-1 text-sm text-(--muted) leading-relaxed">
+            Capture tasks, set priorities, and track your daily progress.
+          </p>
+          <div className="mt-4 flex items-center gap-2 text-xs text-(--muted)">
+            <Calendar size={12} />
+            <span>Organize by date & priority</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/board"
+          className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-all hover:border-(--accent)/50 hover:bg-(--card-hover)"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-2.5 rounded-xl bg-(--accent) text-white">
+              <Layout size={22} />
+            </div>
+            <ArrowRight
+              size={18}
+              className="text-(--muted) transition-transform group-hover:translate-x-1 group-hover:text-(--accent)"
+            />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-(--foreground)">Boards</h2>
+          <p className="mt-1 text-sm text-(--muted) leading-relaxed">
+            Manage projects with kanban-style boards and columns.
+          </p>
+          <div className="mt-4 flex items-center gap-2 text-xs text-(--muted)">
+            <BarChart3 size={12} />
+            <span>Visualize your workflow</span>
+          </div>
+        </Link>
+
+        <Link
+          href="/health"
+          className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-all hover:border-(--success)/50 hover:bg-(--card-hover) sm:col-span-2 lg:col-span-1"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-2.5 rounded-xl bg-(--success) text-white">
+              <Activity size={22} />
+            </div>
+            <ArrowRight
+              size={18}
+              className="text-(--muted) transition-transform group-hover:translate-x-1 group-hover:text-(--success)"
+            />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-(--foreground)">Health</h2>
+          <p className="mt-1 text-sm text-(--muted) leading-relaxed">
+            Track water intake, workouts, sleep, and build healthy habits.
+          </p>
+          <div className="mt-4 flex items-center gap-2 text-xs text-(--muted)">
+            <TrendingUp size={12} />
+            <span>Build streaks & habits</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Getting Started */}
+      <div className="rounded-xl border border-(--border) bg-(--card) p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-(--secondary)">
+            <Target size={18} className="text-(--foreground)" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-(--foreground)">Get Started</h3>
             <p className="mt-1 text-sm text-(--muted)">
-              This is your workspace. Switch between Todos, Board, and Health as features come online.
+              Set up your first project and start tracking your tasks and habits.
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-colors hover:bg-(--card-hover)">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-(--primary) text-(--primary-foreground)">
-              <CheckCircle size={20} />
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              1
             </div>
-            <h2 className="text-lg font-semibold text-(--foreground)">Todos</h2>
+            <span className="text-sm text-(--foreground)">Create a project</span>
           </div>
-          <p className="text-sm text-(--muted) leading-relaxed">
-            Capture tasks, set due dates, and stay organized.
-          </p>
-          <div className="mt-4 pt-4 border-t border-(--border)">
-            <span className="text-xs font-medium text-(--muted-foreground) uppercase tracking-wide">Coming soon</span>
+          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              2
+            </div>
+            <span className="text-sm text-(--foreground)">Add your first task</span>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              3
+            </div>
+            <span className="text-sm text-(--foreground)">Log daily habits</span>
           </div>
         </div>
-
-        <div className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-colors hover:bg-(--card-hover)">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-(--accent) text-(--accent-foreground)">
-              <Layout size={20} />
-            </div>
-            <h2 className="text-lg font-semibold text-(--foreground)">Boards</h2>
-          </div>
-          <p className="text-sm text-(--muted) leading-relaxed">
-            Track work across kanban-style columns.
-          </p>
-          <div className="mt-4 pt-4 border-t border-(--border)">
-            <span className="text-xs font-medium text-(--muted-foreground) uppercase tracking-wide">Coming soon</span>
-          </div>
-        </div>
-
-        <div className="group rounded-xl border border-(--border) bg-(--card) p-5 transition-colors hover:bg-(--card-hover) sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-(--success) text-(--success-foreground)">
-              <Activity size={20} />
-            </div>
-            <h2 className="text-lg font-semibold text-(--foreground)">Habits</h2>
-          </div>
-          <p className="text-sm text-(--muted) leading-relaxed">
-            Log water, gym, and sleep to build streaks.
-          </p>
-          <div className="mt-4 pt-4 border-t border-(--border)">
-            <span className="text-xs font-medium text-(--muted-foreground) uppercase tracking-wide">Coming soon</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Tips */}
-      <div className="rounded-xl border border-(--border) bg-(--card) p-5 sm:p-6">
-        <h3 className="text-base font-semibold text-(--foreground) mb-3">Quick tips</h3>
-        <ul className="space-y-2 text-sm text-(--muted)">
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-(--primary)"></span>
-            Use the theme toggle to switch between light and dark mode
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-(--accent)"></span>
-            More features are on the way - stay tuned!
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-(--success)"></span>
-            Build daily habits to boost your productivity
-          </li>
-        </ul>
       </div>
     </div>
   );
