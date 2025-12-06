@@ -6,64 +6,79 @@ import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
 import { Skeleton } from "../../../components/ui/Skeleton";
-import { Plus, CheckSquare, CheckCircle2, Pencil, X, Check, RotateCcw, Search, Calendar, CalendarDays } from "lucide-react";
+import { Plus, CheckSquare, CheckCircle2, Pencil, X, Check, RotateCcw, Search, Calendar, CalendarDays, FolderPlus, FolderKanban, Inbox as InboxIcon } from "lucide-react";
 
-type FilterType = "all" | "today" | "upcoming" | "completed";
+type FilterType = "all" | "inbox" | "today" | "upcoming" | "completed";
 
 export default function TodosPage() {
-  const { projects, fetchProjects } = useProjectStore();
+  const { projects, fetchProjects, createProject } = useProjectStore();
   const { items, fetchTodos, addTodo, toggleTodo, updateTodo, loading } = useTodoStore();
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
 
   useEffect(() => {
-    fetchProjects();
+    fetchProjects("todo");
   }, [fetchProjects]);
 
   useEffect(() => {
+    const status = filterType === "completed" ? "completed" : undefined;
     if (selectedProject) {
-      fetchTodos(selectedProject, filterType === "completed" ? "completed" : undefined);
+      fetchTodos(selectedProject, status);
+    } else {
+      // fetch all for Inbox/All/Today/Upcoming views
+      fetchTodos(undefined, status);
     }
   }, [selectedProject, filterType, fetchTodos]);
 
-  useEffect(() => {
-    if (selectedProject || !projects.length) return;
-    setSelectedProject(projects[0].id);
-  }, [projects, selectedProject]);
 
   const filteredTodos = useMemo(() => {
     let result = items;
-    
+
+    // Scope by selected project or inbox
+    if (selectedProject) {
+      result = result.filter((t) => t.projectId === selectedProject);
+    } else if (filterType === "inbox") {
+      result = result.filter((t) => !t.projectId);
+    }
+
+    // Status/time windows
     if (filterType === "completed") {
       result = result.filter((t) => t.status === "completed");
     } else if (filterType === "today") {
-      const today = new Date().toDateString();
-      result = result.filter((t) => t.status === "todo" && (!t.dueDate || new Date(t.dueDate).toDateString() === today));
-    } else if (filterType === "upcoming") {
       const today = new Date();
-      result = result.filter((t) => t.status === "todo" && t.dueDate && new Date(t.dueDate) > today);
-    } else {
+      const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      result = result.filter(
+        (t) => t.status === "todo" && (!t.dueDate || (new Date(t.dueDate) >= start && new Date(t.dueDate) < end))
+      );
+    } else if (filterType === "upcoming") {
+      const now = new Date();
+      result = result.filter((t) => t.status === "todo" && t.dueDate && new Date(t.dueDate) > now);
+    } else if (filterType === "all" && !selectedProject) {
       result = result.filter((t) => t.status === "todo");
     }
-    
+
     if (searchQuery) {
       result = result.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
     }
-    
+
     return result;
-  }, [items, filterType, searchQuery]);
+  }, [items, selectedProject, filterType, searchQuery]);
 
   const todoCount = items.filter((t) => t.status === "todo").length;
+  const inboxCount = items.filter((t) => t.status === "todo" && !t.projectId).length;
   const completedCount = items.filter((t) => t.status === "completed").length;
 
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !selectedProject) return;
-    await addTodo({ projectId: selectedProject, title });
+    if (!title.trim()) return;
+    await addTodo({ projectId: selectedProject || undefined, title });
     setTitle("");
   };
 
@@ -91,6 +106,17 @@ export default function TodosPage() {
     setEditingTitle("");
   };
 
+  const createTodoProject = async () => {
+    const name = newProjectName.trim();
+    if (!name) return;
+    const created = await createProject({ name, type: "todo" });
+    setNewProjectName("");
+    setShowNewProject(false);
+    // refresh and select
+    await fetchProjects("todo");
+    setSelectedProject(created.id);
+  };
+
   const sidebar = (
     <div className="space-y-6">
       {/* Search */}
@@ -105,40 +131,47 @@ export default function TodosPage() {
         />
       </div>
 
-      {/* Project Selector */}
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">Project</h3>
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring)"
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      </div>
-
       {/* Quick Filters */}
       <div>
         <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">Views</h3>
         <nav className="space-y-1">
           <button
-            onClick={() => setFilterType("all")}
+            onClick={() => {
+              setSelectedProject(null);
+              setFilterType("all");
+            }}
             className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              filterType === "all" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+              !selectedProject && filterType === "all" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
             <span className="flex items-center gap-2">
               <CheckSquare size={16} />
-              All Todos
+              All Tasks
             </span>
             <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">{todoCount}</span>
           </button>
           <button
-            onClick={() => setFilterType("today")}
+            onClick={() => {
+              setSelectedProject(null);
+              setFilterType("inbox");
+            }}
             className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              filterType === "today" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+              !selectedProject && filterType === "inbox" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <InboxIcon size={16} />
+              Inbox
+            </span>
+            <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">{inboxCount}</span>
+          </button>
+          <button
+            onClick={() => {
+              setSelectedProject(null);
+              setFilterType("today");
+            }}
+            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              !selectedProject && filterType === "today" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
             <span className="flex items-center gap-2">
@@ -147,9 +180,12 @@ export default function TodosPage() {
             </span>
           </button>
           <button
-            onClick={() => setFilterType("upcoming")}
+            onClick={() => {
+              setSelectedProject(null);
+              setFilterType("upcoming");
+            }}
             className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              filterType === "upcoming" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+              !selectedProject && filterType === "upcoming" ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
             <span className="flex items-center gap-2">
@@ -158,9 +194,12 @@ export default function TodosPage() {
             </span>
           </button>
           <button
-            onClick={() => setFilterType("completed")}
+            onClick={() => {
+              setSelectedProject(null);
+              setFilterType("completed");
+            }}
             className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              filterType === "completed" ? "bg-(--success)/10 text-(--success)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+              !selectedProject && filterType === "completed" ? "bg-(--success)/10 text-(--success)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
             <span className="flex items-center gap-2">
@@ -190,6 +229,59 @@ export default function TodosPage() {
           </div>
         </div>
       </div>
+
+      {/* My Projects */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">My Projects</h3>
+          <button
+            onClick={() => setShowNewProject((v) => !v)}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover)"
+          >
+            <FolderPlus size={14} /> New
+          </button>
+        </div>
+
+        {showNewProject && (
+          <div className="mb-2 flex items-center gap-2">
+            <input
+              className="flex-1 rounded-md border border-(--input-border) bg-(--input) px-2 py-1.5 text-sm text-(--foreground) outline-none focus:border-(--ring)"
+              placeholder="New project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createTodoProject();
+                if (e.key === "Escape") setShowNewProject(false);
+              }}
+              autoFocus
+            />
+            <button
+              className="rounded-md bg-(--primary) text-(--primary-foreground) text-xs px-3 py-1.5 hover:bg-(--primary-hover)"
+              onClick={createTodoProject}
+            >Create</button>
+          </div>
+        )}
+
+        <nav className="space-y-1">
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedProject((curr) => (curr === p.id ? null : p.id))}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                selectedProject === p.id ? "bg-(--primary)/10 text-(--primary)" : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
+              }`}
+            >
+              <span className="flex items-center gap-2 truncate">
+                <FolderKanban size={16} />
+                <span className="truncate">{p.name}</span>
+              </span>
+            </button>
+          ))}
+          {projects.length === 0 && (
+            <div className="text-xs text-(--muted)">No projects yet</div>
+          )}
+        </nav>
+      </div>
     </div>
   );
 
@@ -200,7 +292,17 @@ export default function TodosPage() {
         <div>
           <h1 className="text-2xl font-semibold text-(--foreground)">Todos</h1>
           <p className="mt-1 text-sm text-(--muted)">
-            {filterType === "all" ? "All tasks" : filterType === "today" ? "Tasks for today" : filterType === "upcoming" ? "Upcoming tasks" : "Completed tasks"}
+            {selectedProject
+              ? `Project: ${projects.find((p) => p.id === selectedProject)?.name ?? "Unknown"}`
+              : filterType === "all"
+              ? "All tasks"
+              : filterType === "inbox"
+              ? "Inbox"
+              : filterType === "today"
+              ? "Tasks for today"
+              : filterType === "upcoming"
+              ? "Upcoming tasks"
+              : "Completed tasks"}
           </p>
         </div>
 
@@ -217,7 +319,7 @@ export default function TodosPage() {
           </div>
           <button
             type="submit"
-            disabled={!selectedProject || !title.trim()}
+            disabled={!title.trim()}
             className="flex items-center gap-2 rounded-lg bg-(--primary) px-5 py-3 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover) disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus size={18} />

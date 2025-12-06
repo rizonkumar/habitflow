@@ -19,7 +19,6 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 
 const navItems = [
-  { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/todos", label: "Todos", icon: CheckSquare },
   { href: "/board", label: "Board", icon: Layout },
   { href: "/health", label: "Health", icon: Heart },

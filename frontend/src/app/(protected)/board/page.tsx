@@ -5,7 +5,7 @@ import { useProjectStore } from "../../../store/projects";
 import { useBoardStore } from "../../../store/board";
 import type { BoardColumn } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
-import { Plus, Layout, ChevronRight, FolderKanban, Columns, RefreshCw } from "lucide-react";
+import { Plus, Layout, ChevronRight, FolderKanban, Columns, RefreshCw, FolderPlus } from "lucide-react";
 
 const columnColors: Record<string, string> = {
   "Todo": "bg-(--warning)",
@@ -15,14 +15,16 @@ const columnColors: Record<string, string> = {
 };
 
 export default function BoardPage() {
-  const { projects, fetchProjects } = useProjectStore();
+  const { projects, fetchProjects, createProject } = useProjectStore();
   const { columns, tasks, fetchBoard, initBoard, createTask, moveTask } = useBoardStore();
   const [projectId, setProjectId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [showAddTask, setShowAddTask] = useState<string | null>(null);
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
 
   useEffect(() => {
-    fetchProjects();
+    fetchProjects("jira");
   }, [fetchProjects]);
 
   useEffect(() => {
@@ -62,11 +64,50 @@ export default function BoardPage() {
   const totalTasks = tasks.length;
   const selectedProject = projects.find((p) => p.id === projectId);
 
+  const createBoardProject = async () => {
+    const name = newProjectName.trim();
+    if (!name) return;
+    const created = await createProject({ name, type: "jira" });
+    setNewProjectName("");
+    setShowNewProject(false);
+    await fetchProjects("jira");
+    setProjectId(created.id);
+  };
+
   const sidebar = (
     <div className="space-y-6">
       {/* Projects List */}
       <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">Projects</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">Projects</h3>
+          <button
+            onClick={() => setShowNewProject((v) => !v)}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover)"
+          >
+            <FolderPlus size={14} /> New
+          </button>
+        </div>
+
+        {showNewProject && (
+          <div className="mb-2 flex items-center gap-2">
+            <input
+              className="flex-1 rounded-md border border-(--input-border) bg-(--input) px-2 py-1.5 text-sm text-(--foreground) outline-none focus:border-(--ring)"
+              placeholder="New board project"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createBoardProject();
+                if (e.key === "Escape") setShowNewProject(false);
+              }}
+              autoFocus
+            />
+            <button
+              className="rounded-md bg-(--primary) text-(--primary-foreground) text-xs px-3 py-1.5 hover:bg-(--primary-hover)"
+              onClick={createBoardProject}
+            >Create</button>
+          </div>
+        )}
+
         <nav className="space-y-1">
           {projects.map((project) => (
             <button
