@@ -8,9 +8,9 @@ type TodoState = {
   items: Todo[];
   loading: boolean;
   error: string | null;
-  fetchTodos: (projectId: string, status?: Todo["status"]) => Promise<void>;
+  fetchTodos: (projectId?: string | null, status?: Todo["status"]) => Promise<void>;
   addTodo: (payload: {
-    projectId: string;
+    projectId?: string | null;
     title: string;
     description?: string;
     dueDate?: string;
@@ -39,10 +39,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const request = withToken(token);
     set({ loading: true, error: null });
     try {
-      const params = new URLSearchParams({ projectId });
+      const params = new URLSearchParams();
+      if (projectId) params.append("projectId", projectId);
       if (status) params.append("status", status);
+      const qs = params.toString();
       const data = await request<{ todos: Todo[] }>(
-        `/api/todos?${params.toString()}`,
+        `/api/todos${qs ? `?${qs}` : ""}`,
         { method: "GET" }
       );
       set({ items: data.todos, loading: false });
@@ -65,9 +67,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const token = useAuthStore.getState().token;
     const request = withToken(token);
     try {
+      const body: any = { title };
+      if (projectId) body.projectId = projectId;
+      if (description !== undefined) body.description = description;
+      if (dueDate !== undefined) body.dueDate = dueDate;
+      if (priority !== undefined) body.priority = priority;
+      if (tags !== undefined) body.tags = tags;
       const data = await request<{ todo: Todo }>("/api/todos", {
         method: "POST",
-        body: { projectId, title, description, dueDate, priority, tags },
+        body,
       });
       set({ items: [...get().items, data.todo] });
       useToastStore.getState().push({ message: "Todo added", type: "success" });

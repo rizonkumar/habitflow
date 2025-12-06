@@ -19,7 +19,7 @@ const createSchema = z.object({
   body: z.object({
     title: z.string().min(1),
     description: z.string().optional(),
-    projectId: z.string().min(1),
+    projectId: z.string().min(1).optional(),
     dueDate: z.string().datetime().optional(),
     priority: z.enum(["low", "medium", "high"]).optional(),
     tags: z.array(z.string()).optional(),
@@ -28,7 +28,7 @@ const createSchema = z.object({
 
 const listSchema = z.object({
   query: z.object({
-    projectId: z.string().min(1),
+    projectId: z.string().min(1).optional(),
     status: z.enum(["todo", "completed"]).optional(),
   }),
 });

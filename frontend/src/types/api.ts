@@ -13,7 +13,7 @@ export type Todo = {
   id: string;
   title: string;
   description: string;
-  projectId: string;
+  projectId?: string | null; // optional -> supports Inbox (no project)
   ownerId: string;
   status: "todo" | "completed";
   dueDate?: string;

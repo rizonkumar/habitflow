@@ -7,6 +7,7 @@ import { updateStreakOnActivity } from "./streakService.js";
 import { logActivity } from "./activityService.js";
 
 const ensureProjectAccess = async (projectId, userId) => {
+  if (!projectId) return null; // unassigned todo (Inbox)
   const project = await Project.findById(projectId);
   if (!project) {
     throw appError(
@@ -41,7 +42,7 @@ export const createTodo = async ({
   const todo = await Todo.create({
     title: title.trim(),
     description: description || "",
-    projectId,
+    projectId: projectId || null,
     ownerId,
     dueDate,
     priority: priority || "medium",
@@ -51,11 +52,11 @@ export const createTodo = async ({
 };
 
 export const listTodos = async ({ projectId, ownerId, status }) => {
+  // If project specified, validate access; otherwise list by owner
   await ensureProjectAccess(projectId, ownerId);
-  const criteria = { projectId };
-  if (status) {
-    criteria.status = status;
-  }
+  const criteria = { ownerId };
+  if (projectId) criteria.projectId = projectId;
+  if (status) criteria.status = status;
   return Todo.find(criteria).sort({ createdAt: -1 });
 };
 
@@ -72,7 +73,11 @@ export const updateTodo = async ({
   if (!todo) {
     throw appError(todoErrors.notFound.status, todoErrors.notFound.message);
   }
-  await ensureProjectAccess(todo.projectId, ownerId);
+  if (todo.projectId) {
+    await ensureProjectAccess(todo.projectId, ownerId);
+  } else if (todo.ownerId.toString() !== ownerId) {
+    throw appError(todoErrors.forbidden.status, todoErrors.forbidden.message);
+  }
 
   if (!title?.trim()) {
     throw appError(
@@ -95,7 +100,11 @@ export const toggleTodo = async ({ todoId, ownerId, status }) => {
   if (!todo) {
     throw appError(todoErrors.notFound.status, todoErrors.notFound.message);
   }
-  await ensureProjectAccess(todo.projectId, ownerId);
+  if (todo.projectId) {
+    await ensureProjectAccess(todo.projectId, ownerId);
+  } else if (todo.ownerId.toString() !== ownerId) {
+    throw appError(todoErrors.forbidden.status, todoErrors.forbidden.message);
+  }
 
   todo.status = status || (todo.status === "todo" ? "completed" : "todo");
   todo.completedAt = todo.status === "completed" ? new Date() : undefined;
@@ -112,6 +121,10 @@ export const deleteTodo = async ({ todoId, ownerId }) => {
   if (!todo) {
     throw appError(todoErrors.notFound.status, todoErrors.notFound.message);
   }
-  await ensureProjectAccess(todo.projectId, ownerId);
+  if (todo.projectId) {
+    await ensureProjectAccess(todo.projectId, ownerId);
+  } else if (todo.ownerId.toString() !== ownerId) {
+    throw appError(todoErrors.forbidden.status, todoErrors.forbidden.message);
+  }
   await Todo.deleteOne({ _id: todoId });
 };
