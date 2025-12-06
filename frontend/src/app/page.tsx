@@ -12,12 +12,18 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <button className="cursor-pointer rounded-md border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50">
+            <a
+              href="/login"
+              className="cursor-pointer rounded-md border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50"
+            >
               Log in
-            </button>
-            <button className="cursor-pointer rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800">
+            </a>
+            <a
+              href="/signup"
+              className="cursor-pointer rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800"
+            >
               Get started
-            </button>
+            </a>
           </div>
         </header>
 

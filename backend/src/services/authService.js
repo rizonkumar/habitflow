@@ -12,8 +12,21 @@ const emailInUse = async (email) => {
 
 const hashPassword = async (password) => bcrypt.hash(password, 10);
 
-const createToken = (userId) =>
-  jwt.sign({ sub: userId }, appConfig.jwtSecret, { expiresIn: "7d" });
+const signAccessToken = (userId) =>
+  jwt.sign({ sub: userId }, appConfig.jwtSecret, {
+    expiresIn: `${appConfig.accessTokenTtlMinutes}m`,
+  });
+
+const signRefreshToken = (userId, version) =>
+  jwt.sign({ sub: userId, ver: version }, appConfig.jwtRefreshSecret, {
+    expiresIn: `${appConfig.refreshTokenTtlDays}d`,
+  });
+
+const issueTokens = (user) => {
+  const accessToken = signAccessToken(user.id);
+  const refreshToken = signRefreshToken(user.id, user.refreshTokenVersion);
+  return { accessToken, refreshToken };
+};
 
 export const signUp = async ({ name, email, password }) => {
   if (!name?.trim() || !email?.trim() || !password) {
@@ -43,8 +56,8 @@ export const signUp = async ({ name, email, password }) => {
     passwordHash,
   });
 
-  const token = createToken(user.id);
-  return { user, token };
+  const tokens = issueTokens(user);
+  return { user, tokens };
 };
 
 export const logIn = async ({ email, password }) => {
@@ -71,14 +84,44 @@ export const logIn = async ({ email, password }) => {
     );
   }
 
-  const token = createToken(user.id);
-  return { user, token };
+  const tokens = issueTokens(user);
+  return { user, tokens };
 };
 
 export const getCurrentUser = async (userId) => {
   const user = await User.findById(userId).select("-passwordHash");
   if (!user) {
-    throw appError(404, "User not found");
+    throw appError(authErrors.notFound.status, authErrors.notFound.message);
   }
   return user;
+};
+
+export const refreshSession = async (refreshToken) => {
+  try {
+    const payload = jwt.verify(refreshToken, appConfig.jwtRefreshSecret);
+    const user = await User.findById(payload.sub);
+    if (!user) {
+      throw appError(
+        authErrors.invalidToken.status,
+        authErrors.invalidToken.message
+      );
+    }
+    if (user.refreshTokenVersion !== payload.ver) {
+      throw appError(
+        authErrors.invalidToken.status,
+        authErrors.invalidToken.message
+      );
+    }
+    const tokens = issueTokens(user);
+    return { user, tokens };
+  } catch {
+    throw appError(
+      authErrors.invalidToken.status,
+      authErrors.invalidToken.message
+    );
+  }
+};
+
+export const revokeRefresh = async (userId) => {
+  await User.findByIdAndUpdate(userId, { $inc: { refreshTokenVersion: 1 } });
 };
