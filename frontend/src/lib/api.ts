@@ -41,3 +41,8 @@ export const apiRequest = async <T>(
 
   return data as T;
 };
+
+export const withToken = (token: string | null) => {
+  return <T>(path: string, options: Omit<RequestOptions, "token"> = {}) =>
+    apiRequest<T>(path, { ...options, token });
+};
