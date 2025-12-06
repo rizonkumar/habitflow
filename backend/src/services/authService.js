@@ -125,3 +125,18 @@ export const refreshSession = async (refreshToken) => {
 export const revokeRefresh = async (userId) => {
   await User.findByIdAndUpdate(userId, { $inc: { refreshTokenVersion: 1 } });
 };
+
+export const searchUserByEmail = async (email) => {
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
+    "name email avatarUrl"
+  );
+  if (!user) {
+    return null;
+  }
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl || "",
+  };
+};

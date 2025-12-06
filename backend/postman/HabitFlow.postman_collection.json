@@ -250,6 +250,24 @@
           "path": ["api", "health"]
         }
       }
+    },
+    {
+      "name": "Streaks Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/streaks/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "streaks", "me"]
+        }
+      }
     }
   ],
   "event": [],
