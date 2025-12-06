@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Red_Hat_Text } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "../components/theme/ThemeProvider";
 
 const redHatText = Red_Hat_Text({
   variable: "--font-red-hat",
@@ -20,8 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={redHatText.variable}>
-      <body className="antialiased bg-white text-zinc-900">{children}</body>
+    <html lang="en" className={redHatText.variable} suppressHydrationWarning>
+      <body className="antialiased bg-background text-foreground">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

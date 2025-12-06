@@ -13,7 +13,7 @@ export default function ProtectedLayout({
 
   if (checking) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-zinc-700">
+      <div className="flex min-h-screen items-center justify-center bg-(--background)">
         <Loader label="Loading workspace..." size={28} />
       </div>
     );
@@ -24,9 +24,9 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="min-h-screen bg-(--background) text-(--foreground)">
       <AppHeader />
-      <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </div>
   );
 }
