@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useProjectStore } from "../../store/projects";
-import type { Project } from "../../types/api";
-import { AppShell } from "../../components/app/AppShell";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { useProjectStore } from "../../../store/projects";
+import type { Project } from "../../../types/api";
+import { AppShell } from "../../../components/app/AppShell";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import { Plus, FolderKanban, Users, Layers, CheckSquare, Layout, Heart, Search } from "lucide-react";
 
 type TypeFilter = Project["type"] | "all";

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useProjectStore } from "../../store/projects";
-import { useTodoStore } from "../../store/todos";
-import type { Todo } from "../../types/api";
-import { AppShell } from "../../components/app/AppShell";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { useProjectStore } from "../../../store/projects";
+import { useTodoStore } from "../../../store/todos";
+import type { Todo } from "../../../types/api";
+import { AppShell } from "../../../components/app/AppShell";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import { Plus, CheckSquare, CheckCircle2, Pencil, X, Check, RotateCcw, Search, Calendar, CalendarDays } from "lucide-react";
 
 type FilterType = "all" | "today" | "upcoming" | "completed";

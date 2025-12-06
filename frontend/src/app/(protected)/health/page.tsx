@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useHealthStore } from "../../store/health";
-import type { HealthLog } from "../../types/api";
-import { AppShell } from "../../components/app/AppShell";
+import { useHealthStore } from "../../../store/health";
+import type { HealthLog } from "../../../types/api";
+import { AppShell } from "../../../components/app/AppShell";
 import { Droplets, Dumbbell, Moon, Utensils, Sparkles, Plus, Trash2, Heart, Calendar, CalendarDays, CalendarRange } from "lucide-react";
 
 type TimeFilter = "today" | "week" | "month" | "all";

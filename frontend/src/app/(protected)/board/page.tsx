@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProjectStore } from "../../store/projects";
-import { useBoardStore } from "../../store/board";
-import type { BoardColumn } from "../../types/api";
-import { AppShell } from "../../components/app/AppShell";
+import { useProjectStore } from "../../../store/projects";
+import { useBoardStore } from "../../../store/board";
+import type { BoardColumn } from "../../../types/api";
+import { AppShell } from "../../../components/app/AppShell";
 import { Plus, Layout, ChevronRight, FolderKanban, Columns, RefreshCw } from "lucide-react";
 
 const columnColors: Record<string, string> = {
