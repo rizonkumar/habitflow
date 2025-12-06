@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Red_Hat_Text } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme/ThemeProvider";
+import { ToastContainer } from "../components/ui/Toast";
 
 const redHatText = Red_Hat_Text({
   variable: "--font-red-hat",
@@ -23,7 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={redHatText.variable} suppressHydrationWarning>
       <body className="antialiased bg-background text-foreground">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <ToastContainer />
+        </ThemeProvider>
       </body>
     </html>
   );
