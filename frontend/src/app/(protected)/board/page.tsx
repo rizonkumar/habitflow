@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DragDropContext, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { StrictModeDroppable } from "../../../components/board/StrictModeDroppable";
 import { useProjectStore } from "../../../store/projects";
 import { useBoardStore } from "../../../store/board";
 import { useMembershipStore } from "../../../store/membership";
-import type { BoardColumn, ProjectRole } from "../../../types/api";
+import type { BoardColumn, BoardTask, ProjectRole } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
+import { TaskModal } from "../../../components/board/TaskModal";
+import { MemberFilter } from "../../../components/board/MemberFilter";
 import {
   Plus,
   Layout,
-  ChevronRight,
   FolderKanban,
   Columns,
   RefreshCw,
@@ -20,8 +23,9 @@ import {
   Edit3,
   Eye,
   ArrowLeft,
-  Users,
+  GripVertical,
 } from "lucide-react";
+import { useToastStore } from "@/components/ui/Toast";
 
 const roleIcons: Record<
   ProjectRole,
@@ -42,16 +46,27 @@ const columnColors: Record<string, string> = {
 export default function BoardPage() {
   const router = useRouter();
   const { projects, fetchProjects, createProject } = useProjectStore();
-  const { columns, tasks, fetchBoard, initBoard, createTask, moveTask } =
-    useBoardStore();
+  const {
+    columns,
+    tasks,
+    fetchBoard,
+    initBoard,
+    createTask,
+    moveTask,
+    updateTask,
+    deleteTask,
+  } = useBoardStore();
   const { currentUserRole, fetchCurrentUserRole, members, fetchMembers } =
     useMembershipStore();
   const [projectId, setProjectId] = useState<string>("");
   const [title, setTitle] = useState("");
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const [showAddTask, setShowAddTask] = useState<string | null>(null);
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [showProjectSidebar, setShowProjectSidebar] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<BoardTask | null>(null);
+  const [filterMemberIds, setFilterMemberIds] = useState<string[]>([]);
 
   const canEdit = currentUserRole === "admin" || currentUserRole === "editor";
   const isAdmin = currentUserRole === "admin";
@@ -75,8 +90,19 @@ export default function BoardPage() {
     }
   }, [projectId, fetchBoard, fetchCurrentUserRole, fetchMembers]);
 
+  // Filter tasks by selected members
+  const filteredTasks =
+    filterMemberIds.length > 0
+      ? tasks.filter((t) => {
+          if (filterMemberIds.includes("unassigned")) {
+            return !t.assigneeId || filterMemberIds.includes(t.assigneeId);
+          }
+          return t.assigneeId && filterMemberIds.includes(t.assigneeId);
+        })
+      : tasks;
+
   const tasksByColumn = (col: BoardColumn) =>
-    tasks
+    filteredTasks
       .filter((t) => t.statusColumnId === col.id)
       .sort((a, b) => a.order - b.order);
 
@@ -86,10 +112,42 @@ export default function BoardPage() {
       projectId,
       title,
       statusColumnId: targetColumnId,
+      assigneeId: assigneeId || undefined,
     });
     setTitle("");
+    setAssigneeId("");
     setShowAddTask(null);
   };
+
+  const onDragEnd = async (result: DropResult) => {
+    if (!result.destination || !canEdit) return;
+
+    const { draggableId, destination } = result;
+    const newColumnId = destination.droppableId;
+    const newOrder = destination.index;
+
+    try {
+      await moveTask({
+        taskId: draggableId,
+        statusColumnId: newColumnId,
+        order: newOrder,
+      });
+    } catch {
+      useToastStore
+        .getState()
+        .push({ message: "Failed to move task", type: "error" });
+    }
+  };
+
+  const toggleMemberFilter = (userId: string) => {
+    setFilterMemberIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const clearMemberFilter = () => setFilterMemberIds([]);
 
   const handleInitBoard = async () => {
     if (projectId) {
@@ -101,6 +159,14 @@ export default function BoardPage() {
   const getColumnColor = (name: string) =>
     columnColors[name] || "bg-(--accent)";
   const totalTasks = tasks.length;
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
+  };
   const selectedProject = projects.find((p) => p.id === projectId);
 
   const createBoardProject = async () => {
@@ -113,7 +179,6 @@ export default function BoardPage() {
     setProjectId(created.id);
   };
 
-  // Main sidebar - project list
   const mainSidebar = (
     <div className="space-y-6">
       <div>
@@ -173,10 +238,8 @@ export default function BoardPage() {
     </div>
   );
 
-  // Project-specific sidebar
   const projectSidebar = (
     <div className="space-y-6">
-      {/* Back Button */}
       <button
         onClick={() => setShowProjectSidebar(false)}
         className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors"
@@ -185,7 +248,6 @@ export default function BoardPage() {
         All Projects
       </button>
 
-      {/* Project Info */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <FolderKanban size={18} className="text-(--primary)" />
@@ -193,19 +255,21 @@ export default function BoardPage() {
             {selectedProject?.name}
           </h3>
         </div>
-        {currentUserRole && (() => {
-          const config = roleIcons[currentUserRole];
-          const Icon = config.icon;
-          return (
-            <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-(--secondary) ${config.color}`}>
-              <Icon size={12} />
-              {config.label}
-            </span>
-          );
-        })()}
+        {currentUserRole &&
+          (() => {
+            const config = roleIcons[currentUserRole];
+            const Icon = config.icon;
+            return (
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-(--secondary) ${config.color}`}
+              >
+                <Icon size={12} />
+                {config.label}
+              </span>
+            );
+          })()}
       </div>
 
-      {/* Members Preview */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
@@ -218,10 +282,14 @@ export default function BoardPage() {
             const config = roleIcons[member.role];
             const Icon = config.icon;
             return (
-              <div key={member.userId} className="flex items-center justify-between">
+              <div
+                key={member.userId}
+                className="flex items-center justify-between"
+                title={member.name}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-(--primary)/10 flex items-center justify-center text-(--primary) text-xs font-medium">
-                    {member.name.charAt(0).toUpperCase()}
+                    {getInitials(member.name)}
                   </div>
                   <span className="text-sm text-(--foreground) truncate max-w-[100px]">
                     {member.name}
@@ -232,12 +300,13 @@ export default function BoardPage() {
             );
           })}
           {members.length > 5 && (
-            <p className="text-xs text-(--muted) pl-9">+{members.length - 5} more</p>
+            <p className="text-xs text-(--muted) pl-9">
+              +{members.length - 5} more
+            </p>
           )}
         </div>
       </div>
 
-      {/* Columns */}
       {columns.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
@@ -251,7 +320,9 @@ export default function BoardPage() {
               >
                 <span className="flex items-center gap-2">
                   <span
-                    className={`w-2 h-2 rounded-full ${getColumnColor(col.name)}`}
+                    className={`w-2 h-2 rounded-full ${getColumnColor(
+                      col.name
+                    )}`}
                   ></span>
                   {col.name}
                 </span>
@@ -264,7 +335,6 @@ export default function BoardPage() {
         </div>
       )}
 
-      {/* Actions */}
       <div>
         <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
           Actions
@@ -296,170 +366,247 @@ export default function BoardPage() {
     </div>
   );
 
-  const sidebar = showProjectSidebar && projectId ? projectSidebar : mainSidebar;
+  const sidebar =
+    showProjectSidebar && projectId ? projectSidebar : mainSidebar;
 
   return (
     <AppShell sidebar={sidebar}>
       <div className="space-y-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-(--foreground)">
-              Board
-            </h1>
-            {currentUserRole &&
-              (() => {
-                const config = roleIcons[currentUserRole];
-                const Icon = config.icon;
-                return (
-                  <span
-                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-(--secondary) ${config.color}`}
-                  >
-                    <Icon size={12} />
-                    {config.label}
-                  </span>
-                );
-              })()}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-(--foreground)">
+                Board
+              </h1>
+              {currentUserRole &&
+                (() => {
+                  const config = roleIcons[currentUserRole];
+                  const Icon = config.icon;
+                  return (
+                    <span
+                      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-(--secondary) ${config.color}`}
+                    >
+                      <Icon size={12} />
+                      {config.label}
+                    </span>
+                  );
+                })()}
+            </div>
+            <p className="mt-1 text-sm text-(--muted)">
+              {selectedProject
+                ? `${selectedProject.name} • ${filteredTasks.length}${
+                    filterMemberIds.length > 0 ? ` of ${tasks.length}` : ""
+                  } tasks`
+                : "Select a project"}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-(--muted)">
-            {selectedProject
-              ? `${selectedProject.name} • ${totalTasks} tasks`
-              : "Select a project"}
-          </p>
+
+          <MemberFilter
+            members={members}
+            selectedIds={filterMemberIds}
+            onToggle={toggleMemberFilter}
+            onClear={clearMemberFilter}
+          />
         </div>
 
         {columns.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {columns.map((column) => {
-              const columnTasks = tasksByColumn(column);
-              return (
-                <div
-                  key={column.id}
-                  className="flex flex-col rounded-xl border border-(--border) bg-(--card)"
-                >
-                  <div className="flex items-center justify-between p-4 border-b border-(--border)">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-2.5 h-2.5 rounded-full ${getColumnColor(
-                          column.name
-                        )}`}
-                      />
-                      <h3 className="text-sm font-semibold text-(--foreground)">
-                        {column.name}
-                      </h3>
-                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-(--secondary) text-xs text-(--muted)">
-                        {columnTasks.length}
-                      </span>
-                    </div>
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowAddTask(
-                            showAddTask === column.id ? null : column.id
-                          )
-                        }
-                        className="flex items-center justify-center w-7 h-7 rounded-lg text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    )}
-                  </div>
-
-                  {showAddTask === column.id && (
-                    <div className="p-3 border-b border-(--border) bg-(--secondary)/30">
-                      <input
-                        className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring)"
-                        placeholder="Task title..."
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") onCreate(column.id);
-                          if (e.key === "Escape") {
-                            setShowAddTask(null);
-                            setTitle("");
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {columns.map((column) => {
+                const columnTasks = tasksByColumn(column);
+                return (
+                  <div
+                    key={column.id}
+                    className="flex flex-col rounded-xl border border-(--border) bg-(--card)"
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-(--border)">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2.5 h-2.5 rounded-full ${getColumnColor(
+                            column.name
+                          )}`}
+                        />
+                        <h3 className="text-sm font-semibold text-(--foreground)">
+                          {column.name}
+                        </h3>
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-(--secondary) text-xs text-(--muted)">
+                          {columnTasks.length}
+                        </span>
+                      </div>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowAddTask(
+                              showAddTask === column.id ? null : column.id
+                            )
                           }
-                        }}
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => onCreate(column.id)}
-                          disabled={!title.trim()}
-                          className="flex-1 rounded-lg bg-(--primary) px-3 py-1.5 text-xs font-medium text-(--primary-foreground) hover:bg-(--primary-hover) transition-colors disabled:opacity-50"
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
                         >
-                          Add
+                          <Plus size={16} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddTask(null);
-                            setTitle("");
-                          }}
-                          className="flex-1 rounded-lg border border-(--border) px-3 py-1.5 text-xs font-medium text-(--foreground) hover:bg-(--card-hover) transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  )}
 
-                  <div className="flex-1 p-3 space-y-2 min-h-[200px]">
-                    {columnTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="group rounded-lg border border-(--border) bg-(--background) p-3 transition-all hover:border-(--primary)/30 hover:shadow-sm"
-                      >
-                        <p className="text-sm font-medium text-(--foreground)">
-                          {task.title}
-                        </p>
-                        {task.description && (
-                          <p className="text-xs text-(--muted) mt-1 line-clamp-2">
-                            {task.description}
-                          </p>
+                    {showAddTask === column.id && (
+                      <div className="p-3 border-b border-(--border) bg-(--secondary)/30">
+                        <input
+                          className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring)"
+                          placeholder="Task title..."
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") onCreate(column.id);
+                            if (e.key === "Escape") {
+                              setShowAddTask(null);
+                              setTitle("");
+                              setAssigneeId("");
+                            }
+                          }}
+                        />
+                        {members.length > 1 && (
+                          <select
+                            value={assigneeId}
+                            onChange={(e) => setAssigneeId(e.target.value)}
+                            className="w-full mt-2 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring)"
+                          >
+                            <option value="">Unassigned</option>
+                            {members.map((member) => (
+                              <option key={member.userId} value={member.userId}>
+                                {member.name}
+                              </option>
+                            ))}
+                          </select>
                         )}
-                        {canEdit && (
-                          <div className="mt-3 pt-2 border-t border-(--border) flex flex-wrap gap-1">
-                            {columns
-                              .filter((c) => c.id !== column.id)
-                              .map((c) => (
-                                <button
-                                  key={c.id}
-                                  className="flex items-center gap-1 text-xs text-(--muted) hover:text-(--primary) transition-colors"
-                                  onClick={() =>
-                                    moveTask({
-                                      taskId: task.id,
-                                      statusColumnId: c.id,
-                                    })
-                                  }
-                                >
-                                  <ChevronRight size={12} />
-                                  {c.name}
-                                </button>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {!columnTasks.length && showAddTask !== column.id && (
-                      <div className="flex flex-col items-center justify-center h-32 text-center">
-                        <p className="text-xs text-(--muted)">No tasks</p>
-                        {canEdit && (
+                        <div className="flex gap-2 mt-2">
                           <button
                             type="button"
-                            onClick={() => setShowAddTask(column.id)}
-                            className="mt-2 text-xs text-(--primary) hover:underline"
+                            onClick={() => onCreate(column.id)}
+                            disabled={!title.trim()}
+                            className="flex-1 rounded-lg bg-(--primary) px-3 py-1.5 text-xs font-medium text-(--primary-foreground) hover:bg-(--primary-hover) transition-colors disabled:opacity-50"
                           >
-                            Add a task
+                            Add
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAddTask(null);
+                              setTitle("");
+                              setAssigneeId("");
+                            }}
+                            className="flex-1 rounded-lg border border-(--border) px-3 py-1.5 text-xs font-medium text-(--foreground) hover:bg-(--card-hover) transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     )}
+
+                    <StrictModeDroppable droppableId={column.id}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`flex-1 p-3 space-y-2 min-h-[200px] transition-colors ${
+                            snapshot.isDraggingOver ? "bg-(--primary)/5" : ""
+                          }`}
+                        >
+                          {columnTasks.map((task, index) => {
+                            const taskAssignee = members.find(
+                              (m) => m.userId === task.assigneeId
+                            );
+                            return (
+                              <Draggable
+                                key={task.id}
+                                draggableId={task.id}
+                                index={index}
+                                isDragDisabled={!canEdit}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    onClick={() => setSelectedTask(task)}
+                                    className={`group rounded-lg border border-(--border) bg-(--background) p-3 transition-all cursor-pointer ${
+                                      snapshot.isDragging
+                                        ? "shadow-lg border-(--primary)"
+                                        : "hover:border-(--primary)/30 hover:shadow-sm"
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      {canEdit && (
+                                        <div
+                                          {...provided.dragHandleProps}
+                                          className="mt-0.5 text-(--muted) hover:text-(--foreground) cursor-grab"
+                                        >
+                                          <GripVertical size={14} />
+                                        </div>
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-(--foreground)">
+                                          {task.title}
+                                        </p>
+                                        {task.description && (
+                                          <p className="text-xs text-(--muted) mt-1 line-clamp-2">
+                                            {task.description}
+                                          </p>
+                                        )}
+                                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-(--border)">
+                                          <div className="flex items-center gap-2">
+                                            {task.priority && (
+                                              <span
+                                                className={`text-xs px-1.5 py-0.5 rounded ${
+                                                  task.priority === "high"
+                                                    ? "bg-(--destructive)/10 text-(--destructive)"
+                                                    : task.priority === "medium"
+                                                    ? "bg-(--warning)/10 text-(--warning)"
+                                                    : "bg-(--muted)/10 text-(--muted)"
+                                                }`}
+                                              >
+                                                {task.priority}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {taskAssignee && (
+                                            <div
+                                              className="w-6 h-6 rounded-full bg-(--primary)/10 flex items-center justify-center text-(--primary) text-xs font-medium"
+                                              title={taskAssignee.name}
+                                            >
+                                              {getInitials(taskAssignee.name)}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                          {!columnTasks.length && showAddTask !== column.id && (
+                            <div className="flex flex-col items-center justify-center h-32 text-center">
+                              <p className="text-xs text-(--muted)">No tasks</p>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddTask(column.id)}
+                                  className="mt-2 text-xs text-(--primary) hover:underline"
+                                >
+                                  Add a task
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </StrictModeDroppable>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </DragDropContext>
         ) : (
           <div className="rounded-xl border border-(--border) border-dashed bg-(--card) p-12 text-center">
             <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-(--accent)/10 text-(--accent)">
@@ -484,6 +631,24 @@ export default function BoardPage() {
           </div>
         )}
       </div>
+
+      {selectedTask && (
+        <TaskModal
+          task={selectedTask}
+          members={members}
+          canEdit={canEdit}
+          onSave={async (data) => {
+            await updateTask({
+              taskId: selectedTask.id,
+              ...data,
+            });
+          }}
+          onDelete={async () => {
+            await deleteTask(selectedTask.id);
+          }}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </AppShell>
   );
 }

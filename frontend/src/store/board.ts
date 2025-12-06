@@ -49,13 +49,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     const request = withToken(token);
     set({ loading: true, error: null });
     try {
-      const data = await request<{ columns: BoardColumn[]; tasks: BoardTask[] }>(
-        `/api/board/${projectId}`,
-        { method: "GET" }
-      );
+      const data = await request<{
+        columns: BoardColumn[];
+        tasks: BoardTask[];
+      }>(`/api/board/${projectId}`, { method: "GET" });
       set({ columns: data.columns, tasks: data.tasks, loading: false });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load board";
+      const message =
+        error instanceof Error ? error.message : "Failed to load board";
       set({ error: message, loading: false });
       useToastStore.getState().push({ message, type: "error" });
     }
@@ -71,7 +72,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       );
       set({ columns: data.columns });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to init board";
+      const message =
+        error instanceof Error ? error.message : "Failed to init board";
       useToastStore.getState().push({ message, type: "error" });
     }
   },
@@ -93,14 +95,25 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         `/api/board/${projectId}/tasks`,
         {
           method: "POST",
-          body: { title, description, statusColumnId, assigneeId, priority, tags, dueDate },
+          body: {
+            title,
+            description,
+            statusColumnId,
+            assigneeId,
+            priority,
+            tags,
+            dueDate,
+          },
         }
       );
       set({ tasks: [...get().tasks, data.task] });
-      useToastStore.getState().push({ message: "Task created", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Task created", type: "success" });
       return data.task;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create task";
+      const message =
+        error instanceof Error ? error.message : "Failed to create task";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
@@ -109,6 +122,21 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   moveTask: async ({ taskId, statusColumnId, order }) => {
     const token = useAuthStore.getState().token;
     const request = withToken(token);
+
+    const previousTasks = get().tasks;
+
+    set({
+      tasks: get().tasks.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              statusColumnId: statusColumnId || t.statusColumnId,
+              order: order ?? t.order,
+            }
+          : t
+      ),
+    });
+
     try {
       const data = await request<{ task: BoardTask }>(
         `/api/board/tasks/${taskId}/move`,
@@ -122,7 +150,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       });
       return data.task;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to move task";
+      set({ tasks: previousTasks });
+      const message =
+        error instanceof Error ? error.message : "Failed to move task";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
@@ -150,10 +180,13 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       set({
         tasks: get().tasks.map((t) => (t.id === taskId ? data.task : t)),
       });
-      useToastStore.getState().push({ message: "Task updated", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Task updated", type: "success" });
       return data.task;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update task";
+      const message =
+        error instanceof Error ? error.message : "Failed to update task";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
@@ -165,12 +198,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     try {
       await request(`/api/board/tasks/${taskId}`, { method: "DELETE" });
       set({ tasks: get().tasks.filter((t) => t.id !== taskId) });
-      useToastStore.getState().push({ message: "Task deleted", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Task deleted", type: "success" });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete task";
+      const message =
+        error instanceof Error ? error.message : "Failed to delete task";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
   },
 }));
-
