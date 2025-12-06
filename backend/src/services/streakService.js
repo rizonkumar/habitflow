@@ -1,9 +1,14 @@
 import { Streak } from "../models/streakModel.js";
 
 const startOfDay = (date) =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
 
-export const updateStreakOnActivity = async (userId, activityDate = new Date()) => {
+export const updateStreakOnActivity = async (
+  userId,
+  activityDate = new Date()
+) => {
   const today = startOfDay(new Date(activityDate));
 
   let streak = await Streak.findOne({ userId });
@@ -17,13 +22,18 @@ export const updateStreakOnActivity = async (userId, activityDate = new Date()) 
     return streak;
   }
 
-  const last = streak.lastActiveDate ? startOfDay(new Date(streak.lastActiveDate)) : null;
+  const last = streak.lastActiveDate
+    ? startOfDay(new Date(streak.lastActiveDate))
+    : null;
   if (last && last.getTime() === today.getTime()) {
     return streak; // already counted today
   }
 
-  const diffDays = last ? Math.floor((today - last) / (1000 * 60 * 60 * 24)) : null;
-  const currentStreak = diffDays === 1 || diffDays === null ? streak.currentStreak + 1 : 1;
+  const diffDays = last
+    ? Math.floor((today - last) / (1000 * 60 * 60 * 24))
+    : null;
+  const currentStreak =
+    diffDays === 1 || diffDays === null ? streak.currentStreak + 1 : 1;
   const longestStreak = Math.max(streak.longestStreak, currentStreak);
 
   streak.currentStreak = currentStreak;
@@ -45,4 +55,3 @@ export const getUserStreak = async (userId) => {
   }
   return streak;
 };
-

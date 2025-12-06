@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle,
   Layout,
@@ -14,14 +15,17 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useAuthStore } from "../../../store/auth";
-import { useEffect } from "react";
 import { useStreakStore } from "../../../store/streak";
+import { useHealthStore } from "../../../store/health";
 import { Skeleton } from "../../../components/ui/Skeleton";
+import { StreakCalendar } from "../../../components/ui/StreakCalendar";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const firstName = user?.name?.split(" ")[0] || "there";
-  const { streak, fetchStreak, loading } = useStreakStore();
+  const { streak, fetchStreak, loading: streakLoading } = useStreakStore();
+  const { logs, fetchLogs } = useHealthStore();
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const currentHour = new Date().getHours();
   const greeting =
@@ -33,7 +37,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStreak();
-  }, [fetchStreak]);
+    fetchLogs(); // Fetch all logs to get activity dates
+  }, [fetchStreak, fetchLogs]);
+
+  // Extract unique active dates from health logs
+  const activeDates = useMemo(() => {
+    const dates = new Set<string>();
+    logs.forEach((log) => {
+      const date = new Date(log.date).toISOString().split("T")[0];
+      dates.add(date);
+    });
+    return Array.from(dates);
+  }, [logs]);
+
+  // Count logs this week
+  const logsThisWeek = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return logs.filter((l) => new Date(l.date) >= weekAgo).length;
+  }, [logs]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -94,7 +116,7 @@ export default function DashboardPage() {
               <Zap size={14} className="text-(--warning)" />
             </div>
           </div>
-          {loading ? (
+          {streakLoading ? (
             <Skeleton className="mt-2 h-7 w-16" />
           ) : (
             <p className="mt-2 text-2xl font-bold text-(--foreground)">
@@ -116,8 +138,55 @@ export default function DashboardPage() {
               <Activity size={14} className="text-(--success)" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-bold text-(--foreground)">0</p>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">{logsThisWeek}</p>
           <p className="text-xs text-(--muted)">logs this week</p>
+        </div>
+      </div>
+
+      {/* Streak Calendar */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <StreakCalendar
+          activeDates={activeDates}
+          currentStreak={streak?.currentStreak ?? 0}
+          longestStreak={streak?.longestStreak ?? 0}
+          lastActiveDate={streak?.lastActiveDate ?? null}
+          currentMonth={calendarMonth}
+          onMonthChange={setCalendarMonth}
+        />
+        
+        {/* Quick Tips */}
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4 sm:p-5">
+          <h3 className="text-base font-semibold text-(--foreground) mb-4">Keep Your Streak Going</h3>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
+              <span className="text-xl">💧</span>
+              <div>
+                <p className="text-sm font-medium text-(--foreground)">Log your water intake</p>
+                <p className="text-xs text-(--muted)">Stay hydrated throughout the day</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
+              <span className="text-xl">🏋️</span>
+              <div>
+                <p className="text-sm font-medium text-(--foreground)">Track your workouts</p>
+                <p className="text-xs text-(--muted)">Even a short walk counts!</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
+              <span className="text-xl">😴</span>
+              <div>
+                <p className="text-sm font-medium text-(--foreground)">Log your sleep</p>
+                <p className="text-xs text-(--muted)">Aim for 7-9 hours per night</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
+              <span className="text-xl">✅</span>
+              <div>
+                <p className="text-sm font-medium text-(--foreground)">Complete tasks</p>
+                <p className="text-xs text-(--muted)">Each completed task adds to your streak</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
