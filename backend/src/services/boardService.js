@@ -13,11 +13,18 @@ const ensureProjectAccess = async (projectId, userId) => {
     );
   }
   const isOwner = project.ownerId.toString() === userId;
-  const isMember = project.members.some((m) => m.userId.toString() === userId);
-  if (!isOwner && !isMember) {
+  const member = project.members.find((m) => m.userId.toString() === userId);
+  const role = isOwner ? "owner" : member?.role;
+  if (!role) {
     throw appError(boardErrors.forbidden.status, boardErrors.forbidden.message);
   }
-  return project;
+  return { project, role };
+};
+
+const ensureBoardWriteAccess = (role) => {
+  if (role === "viewer") {
+    throw appError(boardErrors.forbidden.status, boardErrors.forbidden.message);
+  }
 };
 
 export const initBoard = async ({ projectId, userId }) => {
@@ -58,7 +65,8 @@ export const createTask = async ({
       boardErrors.missingTitle.message
     );
   }
-  await ensureProjectAccess(projectId, userId);
+  const { role } = await ensureProjectAccess(projectId, userId);
+  ensureBoardWriteAccess(role);
   const task = await BoardTask.create({
     projectId,
     title: title.trim(),
@@ -80,7 +88,8 @@ export const moveTask = async ({ taskId, userId, statusColumnId, order }) => {
       boardErrors.taskNotFound.message
     );
   }
-  await ensureProjectAccess(task.projectId, userId);
+  const { role } = await ensureProjectAccess(task.projectId, userId);
+  ensureBoardWriteAccess(role);
   task.statusColumnId = statusColumnId || task.statusColumnId;
   task.order = typeof order === "number" ? order : task.order;
   await task.save();
@@ -104,7 +113,8 @@ export const updateTask = async ({
       boardErrors.taskNotFound.message
     );
   }
-  await ensureProjectAccess(task.projectId, userId);
+  const { role } = await ensureProjectAccess(task.projectId, userId);
+  ensureBoardWriteAccess(role);
   if (!title?.trim()) {
     throw appError(
       boardErrors.missingTitle.status,
@@ -129,6 +139,7 @@ export const deleteTask = async ({ taskId, userId }) => {
       boardErrors.taskNotFound.message
     );
   }
-  await ensureProjectAccess(task.projectId, userId);
+  const { role } = await ensureProjectAccess(task.projectId, userId);
+  ensureBoardWriteAccess(role);
   await BoardTask.deleteOne({ _id: taskId });
 };

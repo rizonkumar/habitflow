@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
+import { serializeProject } from "../serializers/projectSerializer.js";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ const listSchema = z.object({
 router.post("/", requireAuth, validate(createSchema), async (req, res, next) => {
   try {
     const project = await createProject({ ...req.validated.body, userId: req.userId });
-    res.status(201).json({ project });
+    res.status(201).json({ project: serializeProject(project) });
   } catch (error) {
     next(error);
   }
@@ -40,7 +41,7 @@ router.post("/", requireAuth, validate(createSchema), async (req, res, next) => 
 router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
   try {
     const projects = await listProjects(req.userId, req.validated.query);
-    res.json({ projects });
+    res.json({ projects: projects.map(serializeProject) });
   } catch (error) {
     next(error);
   }
@@ -53,7 +54,7 @@ router.put("/:projectId", requireAuth, validate(updateSchema), async (req, res, 
       userId: req.userId,
       ...req.validated.body,
     });
-    res.json({ project });
+    res.json({ project: serializeProject(project) });
   } catch (error) {
     next(error);
   }

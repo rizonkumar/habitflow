@@ -3,6 +3,7 @@ import { z } from "zod";
 import { logIn, signUp, getCurrentUser } from "../services/authService.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
+import { serializeUser } from "../serializers/userSerializer.js";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.post("/signup", validate(signUpSchema), async (req, res, next) => {
   try {
     const { user, token } = await signUp(req.validated.body);
     res.status(201).json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: serializeUser(user),
       token,
     });
   } catch (error) {
@@ -37,7 +38,7 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
   try {
     const { user, token } = await logIn(req.validated.body);
     res.json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: serializeUser(user),
       token,
     });
   } catch (error) {
@@ -48,7 +49,7 @@ router.post("/login", validate(loginSchema), async (req, res, next) => {
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const user = await getCurrentUser(req.userId);
-    res.json({ user });
+    res.json({ user: serializeUser(user) });
   } catch (error) {
     next(error);
   }

@@ -3,11 +3,14 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import { initBoard, listBoard, createTask, moveTask, updateTask, deleteTask } from "../services/boardService.js";
+import { serializeColumn, serializeTask } from "../serializers/boardSerializer.js";
 
 const router = Router();
 
 const projectParam = z.object({ projectId: z.string().min(1) });
 const taskParam = z.object({ taskId: z.string().min(1) });
+const projectOnlySchema = z.object({ params: projectParam });
+const taskOnlySchema = z.object({ params: taskParam });
 
 const createTaskSchema = z.object({
   params: projectParam,
@@ -42,19 +45,22 @@ const updateTaskSchema = z.object({
   }),
 });
 
-router.post("/:projectId/init", requireAuth, validate({ params: projectParam }), async (req, res, next) => {
+router.post("/:projectId/init", requireAuth, validate(projectOnlySchema), async (req, res, next) => {
   try {
     const columns = await initBoard({ projectId: req.validated.params.projectId, userId: req.userId });
-    res.status(201).json({ columns });
+    res.status(201).json({ columns: columns.map(serializeColumn) });
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/:projectId", requireAuth, validate({ params: projectParam }), async (req, res, next) => {
+router.get("/:projectId", requireAuth, validate(projectOnlySchema), async (req, res, next) => {
   try {
     const board = await listBoard({ projectId: req.validated.params.projectId, userId: req.userId });
-    res.json(board);
+    res.json({
+      columns: board.columns.map(serializeColumn),
+      tasks: board.tasks.map(serializeTask),
+    });
   } catch (error) {
     next(error);
   }
@@ -67,7 +73,7 @@ router.post("/:projectId/tasks", requireAuth, validate(createTaskSchema), async 
       userId: req.userId,
       ...req.validated.body,
     });
-    res.status(201).json({ task });
+    res.status(201).json({ task: serializeTask(task) });
   } catch (error) {
     next(error);
   }
@@ -81,7 +87,7 @@ router.post("/tasks/:taskId/move", requireAuth, validate(moveTaskSchema), async 
       statusColumnId: req.validated.body.statusColumnId,
       order: req.validated.body.order,
     });
-    res.json({ task });
+    res.json({ task: serializeTask(task) });
   } catch (error) {
     next(error);
   }
@@ -94,13 +100,13 @@ router.put("/tasks/:taskId", requireAuth, validate(updateTaskSchema), async (req
       userId: req.userId,
       ...req.validated.body,
     });
-    res.json({ task });
+    res.json({ task: serializeTask(task) });
   } catch (error) {
     next(error);
   }
 });
 
-router.delete("/tasks/:taskId", requireAuth, validate({ params: taskParam }), async (req, res, next) => {
+router.delete("/tasks/:taskId", requireAuth, validate(taskOnlySchema), async (req, res, next) => {
   try {
     await deleteTask({ taskId: req.validated.params.taskId, userId: req.userId });
     res.status(204).send();

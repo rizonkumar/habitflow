@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import { createLog, listLogs, updateLog, deleteLog } from "../services/healthService.js";
+import { serializeHealthLog } from "../serializers/healthSerializer.js";
 
 const router = Router();
 
@@ -39,7 +40,7 @@ const updateSchema = z.object({
 router.post("/", requireAuth, validate(createSchema), async (req, res, next) => {
   try {
     const log = await createLog({ ...req.validated.body, userId: req.userId });
-    res.status(201).json({ log });
+    res.status(201).json({ log: serializeHealthLog(log) });
   } catch (error) {
     next(error);
   }
@@ -48,7 +49,7 @@ router.post("/", requireAuth, validate(createSchema), async (req, res, next) => 
 router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
   try {
     const logs = await listLogs({ userId: req.userId, ...req.validated.query });
-    res.json({ logs });
+    res.json({ logs: logs.map(serializeHealthLog) });
   } catch (error) {
     next(error);
   }
@@ -61,7 +62,7 @@ router.put("/:logId", requireAuth, validate(updateSchema), async (req, res, next
       userId: req.userId,
       ...req.validated.body,
     });
-    res.json({ log });
+    res.json({ log: serializeHealthLog(log) });
   } catch (error) {
     next(error);
   }

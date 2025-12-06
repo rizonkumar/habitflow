@@ -2,7 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import { createTodo, listTodos, updateTodo, toggleTodo, deleteTodo } from "../services/todoService.js";
+import {
+  createTodo,
+  listTodos,
+  updateTodo,
+  toggleTodo,
+  deleteTodo,
+} from "../services/todoService.js";
+import { serializeTodo } from "../serializers/todoSerializer.js";
 
 const router = Router();
 
@@ -44,14 +51,22 @@ const toggleSchema = z.object({
   }),
 });
 
-router.post("/", requireAuth, validate(createSchema), async (req, res, next) => {
-  try {
-    const todo = await createTodo({ ...req.validated.body, ownerId: req.userId });
-    res.status(201).json({ todo });
-  } catch (error) {
-    next(error);
+router.post(
+  "/",
+  requireAuth,
+  validate(createSchema),
+  async (req, res, next) => {
+    try {
+      const todo = await createTodo({
+        ...req.validated.body,
+        ownerId: req.userId,
+      });
+      res.status(201).json({ todo: serializeTodo(todo) });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
   try {
@@ -60,46 +75,63 @@ router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
       ownerId: req.userId,
       status: req.validated.query.status,
     });
-    res.json({ todos });
+    res.json({ todos: todos.map(serializeTodo) });
   } catch (error) {
     next(error);
   }
 });
 
-router.put("/:todoId", requireAuth, validate(updateSchema), async (req, res, next) => {
-  try {
-    const todo = await updateTodo({
-      todoId: req.validated.params.todoId,
-      ownerId: req.userId,
-      ...req.validated.body,
-    });
-    res.json({ todo });
-  } catch (error) {
-    next(error);
+router.put(
+  "/:todoId",
+  requireAuth,
+  validate(updateSchema),
+  async (req, res, next) => {
+    try {
+      const todo = await updateTodo({
+        todoId: req.validated.params.todoId,
+        ownerId: req.userId,
+        ...req.validated.body,
+      });
+      res.json({ todo: serializeTodo(todo) });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.post("/:todoId/toggle", requireAuth, validate(toggleSchema), async (req, res, next) => {
-  try {
-    const todo = await toggleTodo({
-      todoId: req.validated.params.todoId,
-      ownerId: req.userId,
-      status: req.validated.body.status,
-    });
-    res.json({ todo });
-  } catch (error) {
-    next(error);
+router.post(
+  "/:todoId/toggle",
+  requireAuth,
+  validate(toggleSchema),
+  async (req, res, next) => {
+    try {
+      const todo = await toggleTodo({
+        todoId: req.validated.params.todoId,
+        ownerId: req.userId,
+        status: req.validated.body.status,
+      });
+      res.json({ todo: serializeTodo(todo) });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
-router.delete("/:todoId", requireAuth, validate(toggleSchema), async (req, res, next) => {
-  try {
-    await deleteTodo({ todoId: req.validated.params.todoId, ownerId: req.userId });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
+router.delete(
+  "/:todoId",
+  requireAuth,
+  validate(toggleSchema),
+  async (req, res, next) => {
+    try {
+      await deleteTodo({
+        todoId: req.validated.params.todoId,
+        ownerId: req.userId,
+      });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export const todoRoutes = router;
-
