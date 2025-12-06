@@ -59,3 +59,12 @@ export type HealthLog = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type Streak = {
+  id: string;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastActiveDate: string | null;
+  updatedAt: string;
+};

@@ -3,6 +3,8 @@ import { Project } from "../models/projectModel.js";
 import { appError } from "../errors/appError.js";
 import { todoErrors } from "../constants/todoConstants.js";
 import { projectErrors } from "../constants/projectConstants.js";
+import { updateStreakOnActivity } from "./streakService.js";
+import { logActivity } from "./activityService.js";
 
 const ensureProjectAccess = async (projectId, userId) => {
   const project = await Project.findById(projectId);
@@ -98,6 +100,10 @@ export const toggleTodo = async ({ todoId, ownerId, status }) => {
   todo.status = status || (todo.status === "todo" ? "completed" : "todo");
   todo.completedAt = todo.status === "completed" ? new Date() : undefined;
   await todo.save();
+  if (todo.status === "completed") {
+    await updateStreakOnActivity(ownerId);
+    await logActivity(ownerId, "todo.completed", { todoId });
+  }
   return todo;
 };
 

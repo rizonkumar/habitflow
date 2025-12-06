@@ -3,6 +3,8 @@ import { Project } from "../models/projectModel.js";
 import { appError } from "../errors/appError.js";
 import { boardErrors } from "../constants/boardConstants.js";
 import { projectErrors } from "../constants/projectConstants.js";
+import { updateStreakOnActivity } from "./streakService.js";
+import { logActivity } from "./activityService.js";
 
 const ensureProjectAccess = async (projectId, userId) => {
   const project = await Project.findById(projectId);
@@ -90,9 +92,17 @@ export const moveTask = async ({ taskId, userId, statusColumnId, order }) => {
   }
   const { role } = await ensureProjectAccess(task.projectId, userId);
   ensureBoardWriteAccess(role);
-  task.statusColumnId = statusColumnId || task.statusColumnId;
+  const newStatusColumnId = statusColumnId || task.statusColumnId;
+  task.statusColumnId = newStatusColumnId;
   task.order = typeof order === "number" ? order : task.order;
   await task.save();
+  if (statusColumnId) {
+    const column = await BoardColumn.findById(newStatusColumnId);
+    if (column && column.name.toLowerCase() === "completed") {
+      await updateStreakOnActivity(userId);
+      await logActivity(userId, "board.task.completed", { taskId, projectId: task.projectId });
+    }
+  }
   return task;
 };
 
@@ -128,6 +138,7 @@ export const updateTask = async ({
   task.dueDate = dueDate;
   task.assigneeId = assigneeId || task.assigneeId;
   await task.save();
+  await logActivity(userId, "board.task.updated", { taskId });
   return task;
 };
 
