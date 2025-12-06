@@ -19,8 +19,9 @@ type AuthState = {
     email: string;
     password: string;
   }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   loadCurrentUser: () => Promise<void>;
+  refresh: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -65,7 +66,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  refresh: async () => {
+    try {
+      const data = await apiRequest<{ user: User; token: string }>(
+        "/api/auth/refresh",
+        { method: "POST" }
+      );
+      set({
+        user: data.user,
+        token: data.token,
+        status: "authenticated",
+        error: null,
+      });
+    } catch {
+      set({ user: null, token: null, status: "idle" });
+    }
+  },
+
   loadCurrentUser: async () => {
+    if (!get().token) {
+      await get().refresh();
+    }
     const token = get().token;
     if (!token) {
       set({ user: null, status: "idle" });
@@ -86,7 +107,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: () => {
-    set({ user: null, token: null, status: "idle", error: null });
+  logout: async () => {
+    try {
+      await apiRequest("/api/auth/logout", { method: "POST", token: get().token });
+    } catch {
+      /* ignore logout errors */
+    } finally {
+      set({ user: null, token: null, status: "idle", error: null });
+    }
   },
 }));

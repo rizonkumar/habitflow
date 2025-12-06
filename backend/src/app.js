@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import { authRoutes } from "./routes/authRoutes.js";
 import { projectRoutes } from "./routes/projectRoutes.js";
 import { todoRoutes } from "./routes/todoRoutes.js";
@@ -13,8 +14,14 @@ export const createApp = () => {
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
   app.use(express.json());
+  app.use(cookieParser());
   app.use(morgan("dev"));
 
   app.get("/health", (_req, res) => {

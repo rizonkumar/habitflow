@@ -9,16 +9,14 @@ export const useAuthGuard = () => {
 
   useEffect(() => {
     const ensure = async () => {
-      if (!token) {
+      await loadCurrentUser();
+      const stillNoToken = !useAuthStore.getState().token;
+      if (stillNoToken) {
         router.replace("/login");
-        return;
-      }
-      if (!user && status !== "loading") {
-        await loadCurrentUser();
       }
     };
     ensure().finally(() => setChecking(false));
-  }, [token, user, status, loadCurrentUser, router]);
+  }, [loadCurrentUser, router]);
 
   const isAuthenticated = Boolean(token && (user || status === "authenticated"));
   return { isAuthenticated, checking };

@@ -21,6 +21,7 @@ export const apiRequest = async <T>(
     headers,
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
+    credentials: "include",
   });
 
   let data: unknown = null;
