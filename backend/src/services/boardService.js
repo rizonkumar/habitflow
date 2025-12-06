@@ -14,9 +14,8 @@ const ensureProjectAccess = async (projectId, userId) => {
       projectErrors.notFound.message
     );
   }
-  const isOwner = project.ownerId.toString() === userId;
   const member = project.members.find((m) => m.userId.toString() === userId);
-  const role = isOwner ? "owner" : member?.role;
+  const role = member?.role;
   if (!role) {
     throw appError(boardErrors.forbidden.status, boardErrors.forbidden.message);
   }
@@ -100,7 +99,10 @@ export const moveTask = async ({ taskId, userId, statusColumnId, order }) => {
     const column = await BoardColumn.findById(newStatusColumnId);
     if (column && column.name.toLowerCase() === "completed") {
       await updateStreakOnActivity(userId);
-      await logActivity(userId, "board.task.completed", { taskId, projectId: task.projectId });
+      await logActivity(userId, "board.task.completed", {
+        taskId,
+        projectId: task.projectId,
+      });
     }
   }
   return task;

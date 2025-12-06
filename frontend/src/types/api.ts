@@ -1,12 +1,22 @@
+export type ProjectRole = "admin" | "editor" | "viewer";
+
 export type Project = {
   id: string;
   name: string;
   description: string;
   ownerId: string;
-  members: { userId: string; role: "owner" | "editor" | "viewer" }[];
+  members: { userId: string; role: ProjectRole }[];
   type: "todo" | "jira" | "health" | "mixed";
   createdAt: string;
   updatedAt: string;
+};
+
+export type ProjectMember = {
+  userId: string;
+  role: ProjectRole;
+  name: string;
+  email: string;
+  avatarUrl: string;
 };
 
 export type Todo = {

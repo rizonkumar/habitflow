@@ -26,7 +26,7 @@ export const createProject = async ({ name, description, type, userId }) => {
     description: description || "",
     type: type || "mixed",
     ownerId: userId,
-    members: [{ userId, role: "owner" }],
+    members: [{ userId, role: "admin" }],
   });
 
   return project;

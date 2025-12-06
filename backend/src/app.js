@@ -9,6 +9,7 @@ import { todoRoutes } from "./routes/todoRoutes.js";
 import { boardRoutes } from "./routes/boardRoutes.js";
 import { healthRoutes } from "./routes/healthRoutes.js";
 import { streakRoutes } from "./routes/streakRoutes.js";
+import { membershipRoutes } from "./routes/membershipRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const createApp = () => {
@@ -31,6 +32,7 @@ export const createApp = () => {
 
   app.use("/api/auth", authRoutes);
   app.use("/api/projects", projectRoutes);
+  app.use("/api/projects", membershipRoutes);
   app.use("/api/todos", todoRoutes);
   app.use("/api/board", boardRoutes);
   app.use("/api/health", healthRoutes);

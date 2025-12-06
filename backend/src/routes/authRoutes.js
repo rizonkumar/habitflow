@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
-import { logIn, signUp, getCurrentUser, refreshSession, revokeRefresh } from "../services/authService.js";
+import {
+  logIn,
+  signUp,
+  getCurrentUser,
+  refreshSession,
+  revokeRefresh,
+  searchUserByEmail,
+} from "../services/authService.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import { serializeUser } from "../serializers/userSerializer.js";
@@ -75,7 +82,9 @@ router.post("/refresh", async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) {
-      return res.status(401).json({ error: { message: "Missing refresh token" } });
+      return res
+        .status(401)
+        .json({ error: { message: "Missing refresh token" } });
     }
     const { user, tokens } = await refreshSession(token);
     res.cookie("refreshToken", tokens.refreshToken, {
@@ -93,6 +102,22 @@ router.post("/logout", requireAuth, async (req, res, next) => {
     await revokeRefresh(req.userId);
     res.clearCookie("refreshToken", { ...cookieOptions, maxAge: 0 });
     res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Search user by email (for invite lookup)
+router.get("/users/search", requireAuth, async (req, res, next) => {
+  try {
+    const email = req.query.email;
+    if (!email || typeof email !== "string") {
+      return res
+        .status(400)
+        .json({ error: { message: "Email query parameter is required" } });
+    }
+    const user = await searchUserByEmail(email);
+    res.json({ user });
   } catch (error) {
     next(error);
   }
