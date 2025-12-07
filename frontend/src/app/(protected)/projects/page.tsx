@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "../../../store/projects";
 import type { Project } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
@@ -38,12 +39,22 @@ export default function ProjectsPage() {
     type: "mixed" as Project["type"],
   });
   const [showForm, setShowForm] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+}, [fetchProjects]);
+
+  // Deep links: ?new=1 to open the form, &type=jira|todo|health|mixed
+  useEffect(() => {
+    if (searchParams.get("new") === "1") setShowForm(true);
+    const t = searchParams.get("type") as Project["type"] | null;
+    if (t && ["mixed", "todo", "jira", "health"].includes(t)) {
+      setForm((f) => ({ ...f, type: t }));
+    }
+  }, [searchParams]);
 
   const filteredProjects = useMemo(() => {
     let result = projects;
