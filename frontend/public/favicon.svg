@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      :root { --p: #2563eb; --a: #8b5cf6; }
+      @media (prefers-color-scheme: dark) {
+        :root { --p: #3b82f6; --a: #a78bfa; }
+      }
+    </style>
+    <linearGradient id="g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="var(--p)" />
+      <stop offset="1" stop-color="var(--a)" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#g)" />
+  <path d="M8 18c2.6-4 6-6.5 8.5-10.5" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".95" />
+  <path d="M10 24c2.8-4.2 6.8-7.2 11.5-13" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".9" />
+  <circle cx="8" cy="18" r="1.6" fill="#fff" />
+  <circle cx="20" cy="8" r="1.4" fill="#fff" />
+  <circle cx="26" cy="12" r="1.2" fill="#fff" />
+</svg>

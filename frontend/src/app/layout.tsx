@@ -14,6 +14,10 @@ const redHatText = Red_Hat_Text({
 export const metadata: Metadata = {
   title: "HabitFlow",
   description: "Minimal productivity hub",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: ["/favicon.svg"],
+  },
 };
 
 export default function RootLayout({
