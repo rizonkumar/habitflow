@@ -55,9 +55,9 @@ export function MemberFilter({
               >
                 {getInitials(member.name)}
               </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-(--primary-foreground) bg-(--foreground) rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium bg-gray-900 text-white dark:bg-white dark:text-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-lg">
                 {member.name}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-(--foreground)" />
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-white" />
               </div>
             </div>
           );

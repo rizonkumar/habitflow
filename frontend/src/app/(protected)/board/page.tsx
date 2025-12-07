@@ -158,15 +158,14 @@ export default function BoardPage() {
 
   const getColumnColor = (name: string) =>
     columnColors[name] || "bg-(--accent)";
-  const totalTasks = tasks.length;
 
+  // Get initials from name (first + last initial)
   const getInitials = (name: string) => {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (
-      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
-    ).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
+
   const selectedProject = projects.find((p) => p.id === projectId);
 
   const createBoardProject = async () => {
