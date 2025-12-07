@@ -275,38 +275,26 @@ export default function DashboardPage() {
             <Target size={18} className="text-(--foreground)" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-(--foreground)">Get Started</h3>
+<h3 className="font-semibold text-(--foreground)">Get Started</h3>
             <p className="mt-1 text-sm text-(--muted)">
-              Set up your first project and start tracking your tasks and
-              habits.
+              Start by adding a task or logging a habit. Projects are optional
+              and help when you want kanban boards.
             </p>
           </div>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
-              1
-            </div>
-            <span className="text-sm text-(--foreground)">
-              Create a project
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
-              2
-            </div>
-            <span className="text-sm text-(--foreground)">
-              Add your first task
-            </span>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
-              3
-            </div>
-            <span className="text-sm text-(--foreground)">
-              Log daily habits
-            </span>
-          </div>
+<div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Link href="/todos?add=1" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">1</div>
+            <span className="text-sm text-(--foreground)">Add your first task</span>
+          </Link>
+          <Link href="/health?add=1&period=today" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">2</div>
+            <span className="text-sm text-(--foreground)">Log a habit today</span>
+          </Link>
+          <Link href="/projects?new=1&type=jira" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">3</div>
+            <span className="text-sm text-(--foreground)">Optional: Create a project (boards)</span>
+          </Link>
         </div>
       </div>
     </div>

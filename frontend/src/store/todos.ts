@@ -8,7 +8,12 @@ type TodoState = {
   items: Todo[];
   loading: boolean;
   error: string | null;
-  fetchTodos: (projectId?: string | null, status?: Todo["status"], from?: string, to?: string) => Promise<void>;
+  fetchTodos: (
+    projectId?: string | null,
+    status?: Todo["status"],
+    from?: string,
+    to?: string
+  ) => Promise<void>;
   addTodo: (payload: {
     projectId?: string | null;
     title: string;
@@ -69,7 +74,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const token = useAuthStore.getState().token;
     const request = withToken(token);
     try {
-      const body: any = { title };
+      const body: Record<string, unknown> = { title };
       if (projectId) body.projectId = projectId;
       if (description !== undefined) body.description = description;
       if (dueDate !== undefined) body.dueDate = dueDate;

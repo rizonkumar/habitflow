@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useProjectStore } from "../../../store/projects";
 import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
@@ -35,7 +36,8 @@ export default function TodosPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showNewProject, setShowNewProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
+const [newProjectName, setNewProjectName] = useState("");
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchProjects("todo");
@@ -65,7 +67,15 @@ export default function TodosPage() {
     } else {
       fetchTodos(undefined, status, from, to);
     }
-  }, [selectedProject, filterType, fetchTodos]);
+}, [selectedProject, filterType, fetchTodos]);
+
+  // Deep link: focus add input when ?add=1
+  useEffect(() => {
+    if (searchParams.get("add") === "1") {
+      const el = document.getElementById("new-todo-input") as HTMLInputElement | null;
+      el?.focus();
+    }
+  }, [searchParams]);
 
   const filteredTodos = useMemo(() => {
     let result = items;
@@ -366,7 +376,8 @@ export default function TodosPage() {
 
         <form onSubmit={onAdd} className="flex gap-3">
           <div className="flex-1 relative">
-            <input
+<input
+              id="new-todo-input"
               className="w-full rounded-lg border border-(--input-border) bg-(--input) pl-10 pr-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-colors focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
               placeholder="What needs to be done?"
               value={title}
