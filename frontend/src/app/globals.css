@@ -62,7 +62,6 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -81,7 +80,6 @@ body {
   background: var(--muted);
 }
 
-/* Focus ring utility */
 .focus-ring {
   outline: none;
 }
@@ -91,7 +89,6 @@ body {
   outline-offset: 2px;
 }
 
-/* Animations */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -115,7 +112,6 @@ body {
   animation-delay: 1s;
 }
 
-/* React Day Picker custom styles */
 .rdp-custom {
   --rdp-accent-color: var(--primary);
   --rdp-accent-background-color: var(--primary);
@@ -143,7 +139,6 @@ body {
   fill: var(--foreground);
 }
 
-/* Animation utilities */
 @keyframes animate-in {
   from {
     opacity: 0;
@@ -156,7 +151,7 @@ body {
 }
 
 .animate-in {
-  animation: animate-in 0.15s ease-out;
+  animation: animate-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fade-in-0 {
@@ -165,4 +160,64 @@ body {
 
 .zoom-in-95 {
   --tw-enter-scale: 0.95;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass {
+  background: rgba(10, 10, 12, 0.7);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes subtle-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
