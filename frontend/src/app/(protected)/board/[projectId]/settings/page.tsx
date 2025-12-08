@@ -19,6 +19,7 @@ import {
   Loader2,
   Crown,
 } from "lucide-react";
+import { useToastStore } from "@/components/ui/Toast";
 
 const roleConfig: Record<
   ProjectRole,
@@ -82,7 +83,9 @@ export default function BoardSettingsPage() {
       setEmail("");
       setSelectedRole("viewer");
     } catch {
-      // Error handled by store
+      useToastStore
+        .getState()
+        .push({ message: "Failed to add member", type: "error" });
     }
   };
 
@@ -90,7 +93,9 @@ export default function BoardSettingsPage() {
     try {
       await updateMemberRole(projectId, memberId, newRole);
     } catch {
-      // Error handled by store
+      useToastStore
+        .getState()
+        .push({ message: "Failed to update member role", type: "error" });
     }
   };
 
@@ -99,7 +104,9 @@ export default function BoardSettingsPage() {
       await removeMember(projectId, memberId);
       setConfirmRemove(null);
     } catch {
-      // Error handled by store
+      useToastStore
+        .getState()
+        .push({ message: "Failed to remove member", type: "error" });
     }
   };
 
@@ -164,7 +171,6 @@ export default function BoardSettingsPage() {
   return (
     <AppShell sidebar={sidebar}>
       <div className="space-y-6 max-w-3xl">
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-semibold text-(--foreground)">
             Project Settings
@@ -174,7 +180,6 @@ export default function BoardSettingsPage() {
           </p>
         </div>
 
-        {/* Add Member Section - Only for Admins */}
         {isAdmin && (
           <div className="rounded-xl border border-(--border) bg-(--card) p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -215,7 +220,6 @@ export default function BoardSettingsPage() {
                 </button>
               </div>
 
-              {/* Search Result */}
               {searchedUser && (
                 <div className="flex items-center justify-between p-4 rounded-lg border border-(--border) bg-(--secondary)/30">
                   <div className="flex items-center gap-3">
@@ -263,7 +267,6 @@ export default function BoardSettingsPage() {
           </div>
         )}
 
-        {/* Members List */}
         <div className="rounded-xl border border-(--border) bg-(--card)">
           <div className="flex items-center gap-2 p-6 border-b border-(--border)">
             <Users size={20} className="text-(--primary)" />
@@ -368,7 +371,6 @@ export default function BoardSettingsPage() {
           )}
         </div>
 
-        {/* Role Permissions Info */}
         <div className="rounded-xl border border-(--border) bg-(--card) p-6">
           <h3 className="text-sm font-semibold text-(--foreground) mb-4">
             Role Permissions

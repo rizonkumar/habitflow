@@ -8,19 +8,23 @@ type HealthState = {
   logs: HealthLog[];
   loading: boolean;
   error: string | null;
-  fetchLogs: (params?: { type?: HealthLog["type"]; from?: string; to?: string }) => Promise<void>;
+  fetchLogs: (params?: {
+    type?: HealthLog["type"];
+    from?: string;
+    to?: string;
+  }) => Promise<void>;
   createLog: (payload: {
     type: HealthLog["type"];
     amount?: number;
     unit?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     date?: string;
   }) => Promise<HealthLog>;
   updateLog: (payload: {
     logId: string;
     amount?: number;
     unit?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     date?: string;
   }) => Promise<HealthLog>;
   deleteLog: (logId: string) => Promise<void>;
@@ -46,7 +50,8 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       );
       set({ logs: data.logs, loading: false });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load logs";
+      const message =
+        error instanceof Error ? error.message : "Failed to load logs";
       set({ error: message, loading: false });
       useToastStore.getState().push({ message, type: "error" });
     }
@@ -64,7 +69,8 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       useToastStore.getState().push({ message: "Log added", type: "success" });
       return data.log;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to add log";
+      const message =
+        error instanceof Error ? error.message : "Failed to add log";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
@@ -81,10 +87,13 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       set({
         logs: get().logs.map((l) => (l.id === logId ? data.log : l)),
       });
-      useToastStore.getState().push({ message: "Log updated", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Log updated", type: "success" });
       return data.log;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update log";
+      const message =
+        error instanceof Error ? error.message : "Failed to update log";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
@@ -96,12 +105,14 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     try {
       await request(`/api/health/${logId}`, { method: "DELETE" });
       set({ logs: get().logs.filter((l) => l.id !== logId) });
-      useToastStore.getState().push({ message: "Log deleted", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Log deleted", type: "success" });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete log";
+      const message =
+        error instanceof Error ? error.message : "Failed to delete log";
       useToastStore.getState().push({ message, type: "error" });
       throw error;
     }
   },
 }));
-

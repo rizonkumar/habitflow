@@ -30,7 +30,8 @@ export default function SignupPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -39,16 +40,18 @@ export default function SignupPage() {
     try {
       await signup({ name, email, password });
       router.push("/dashboard");
-    } catch (err: any) {
-      setLocalError(err?.message || "Signup failed");
+    } catch (err: unknown) {
+      setLocalError(err instanceof Error ? err.message : "Signup failed");
     }
   };
 
   return (
     <div className="min-h-screen bg-(--background) flex flex-col">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-4">
-        <Link href="/" className="text-sm font-medium text-(--muted) hover:text-(--foreground) transition-colors">
+        <Link
+          href="/"
+          className="text-sm font-medium text-(--muted) hover:text-(--foreground) transition-colors"
+        >
           ← Back
         </Link>
         {mounted && (
@@ -63,17 +66,17 @@ export default function SignupPage() {
         )}
       </div>
 
-      {/* Brand */}
       <div className="flex justify-center pt-4">
         <Logo size={22} />
       </div>
 
-      {/* Form card */}
       <div className="flex flex-1 items-center justify-center pb-16">
         <div className="w-full max-w-md rounded-xl border border-(--border) bg-(--card) p-6 sm:p-8 shadow-sm">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold">Create account</h1>
-            <p className="mt-1.5 text-sm text-(--muted)">Start your productivity journey with HabitFlow.</p>
+            <p className="mt-1.5 text-sm text-(--muted)">
+              Start your productivity journey with HabitFlow.
+            </p>
           </div>
 
           <form className="space-y-4" onSubmit={onSubmit}>
@@ -138,7 +141,9 @@ export default function SignupPage() {
 
             {(localError || error) && (
               <div className="rounded-lg bg-(--destructive)/10 border border-(--destructive)/20 px-3 py-2">
-                <p className="text-sm text-(--destructive)">{localError || error}</p>
+                <p className="text-sm text-(--destructive)">
+                  {localError || error}
+                </p>
               </div>
             )}
 
@@ -149,7 +154,8 @@ export default function SignupPage() {
             >
               {status === "loading" ? (
                 <>
-                  <Loader2 className="animate-spin" size={18} /> Creating account...
+                  <Loader2 className="animate-spin" size={18} /> Creating
+                  account...
                 </>
               ) : (
                 <>
@@ -161,7 +167,10 @@ export default function SignupPage() {
 
             <p className="text-sm text-(--muted) text-center">
               Already have an account?{" "}
-              <Link href="/login" className="font-medium text-(--primary) hover:underline">
+              <Link
+                href="/login"
+                className="font-medium text-(--primary) hover:underline"
+              >
                 Log in
               </Link>
             </p>

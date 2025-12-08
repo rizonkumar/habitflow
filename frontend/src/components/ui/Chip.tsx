@@ -8,7 +8,13 @@ type ChipProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
 };
 
-export function Chip({ icon, active, className = "", children, ...props }: ChipProps) {
+export function Chip({
+  icon,
+  active,
+  className = "",
+  children,
+  ...props
+}: ChipProps) {
   return (
     <button
       type="button"

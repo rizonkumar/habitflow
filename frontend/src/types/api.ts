@@ -23,7 +23,7 @@ export type Todo = {
   id: string;
   title: string;
   description: string;
-  projectId?: string | null; // optional -> supports Inbox (no project)
+  projectId?: string | null;
   ownerId: string;
   status: "todo" | "completed";
   dueDate?: string;
@@ -64,7 +64,7 @@ export type HealthLog = {
   type: "water" | "gym" | "sleep" | "diet" | "custom";
   amount: number;
   unit: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   date: string;
   createdAt: string;
   updatedAt: string;

@@ -38,7 +38,7 @@ export default function TodosPage() {
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("");
-const [priority, setPriority] = useState<Todo["priority"]>("medium");
+  const [priority, setPriority] = useState<Todo["priority"]>("medium");
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -46,14 +46,12 @@ const [priority, setPriority] = useState<Todo["priority"]>("medium");
     Todo["priority"] | null
   >(null);
   const [showNewProject, setShowNewProject] = useState(false);
-const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectName, setNewProjectName] = useState("");
   const searchParams = useSearchParams();
 
-  // Inline add fields
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [chosenProjectId, setChosenProjectId] = useState<string | null>(null);
 
-  // Modal fields
   const [showAddModal, setShowAddModal] = useState(false);
   const [mTitle, setMTitle] = useState("");
   const [mDueDate, setMDueDate] = useState<Date | undefined>(undefined);
@@ -143,9 +141,12 @@ const [newProjectName, setNewProjectName] = useState("");
     { value: "low", label: "Low", color: "var(--muted)" },
   ];
 
-  // Project options for Select
   const projectOptions: SelectOption[] = [
-    { value: "none", label: "No project", icon: <InboxIcon size={15} className="text-(--muted)" /> },
+    {
+      value: "none",
+      label: "No project",
+      icon: <InboxIcon size={15} className="text-(--muted)" />,
+    },
     ...projects.map((p) => ({
       value: p.id,
       label: p.name,
@@ -157,7 +158,7 @@ const [newProjectName, setNewProjectName] = useState("");
     e.preventDefault();
     if (!title.trim()) return;
     await addTodo({
-      projectId: (chosenProjectId || selectedProject) || undefined,
+      projectId: chosenProjectId || selectedProject || undefined,
       title,
       priority,
       dueDate: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
@@ -264,7 +265,7 @@ const [newProjectName, setNewProjectName] = useState("");
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-<span className="flex items-center gap-2">
+            <span className="flex items-center gap-2">
               <InboxIcon size={16} />
               No Project
             </span>
@@ -431,12 +432,12 @@ const [newProjectName, setNewProjectName] = useState("");
           </p>
         </div>
 
-{/* Quick add composer */}
         <form
           onSubmit={onAdd}
-          className={`rounded-2xl border ${composerOpen ? "border-(--ring) shadow-lg" : "border-(--border)"} bg-(--card) p-4 shadow-sm transition-all`}
+          className={`rounded-2xl border ${
+            composerOpen ? "border-(--ring) shadow-lg" : "border-(--border)"
+          } bg-(--card) p-4 shadow-sm transition-all`}
         >
-          {/* Task title input */}
           <div className="relative mb-4">
             <input
               id="new-todo-input"
@@ -452,34 +453,33 @@ const [newProjectName, setNewProjectName] = useState("");
             />
           </div>
 
-          {/* Toolbar row */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Due date picker */}
             <DatePicker
               value={dueDate}
               onChange={setDueDate}
               placeholder="Due date"
             />
 
-            {/* Priority dropdown */}
             <Select
               value={priority}
-              onChange={(val) => setPriority((val as Todo["priority"]) || "medium")}
+              onChange={(val) =>
+                setPriority((val as Todo["priority"]) || "medium")
+              }
               options={priorityOptions}
               placeholder="Priority"
               icon={<Flag size={15} />}
             />
 
-            {/* Project dropdown */}
             <Select
               value={chosenProjectId || selectedProject || "none"}
-              onChange={(val) => setChosenProjectId(val === "none" ? null : val)}
+              onChange={(val) =>
+                setChosenProjectId(val === "none" ? null : val)
+              }
               options={projectOptions}
               placeholder="Project"
               icon={<FolderKanban size={15} />}
             />
 
-            {/* Reminders (disabled) */}
             <button
               type="button"
               disabled
@@ -489,10 +489,8 @@ const [newProjectName, setNewProjectName] = useState("");
               Reminders
             </button>
 
-            {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Add button */}
             <button
               type="submit"
               disabled={!title.trim()}
@@ -659,13 +657,17 @@ const [newProjectName, setNewProjectName] = useState("");
           )}
         </div>
       </div>
-      {/* Add Task Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowAddModal(false)}
+          />
           <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-(--border) bg-(--card) shadow-2xl animate-in fade-in-0 zoom-in-95">
             <div className="flex items-center justify-between p-5 border-b border-(--border)">
-              <h2 className="text-lg font-semibold text-(--foreground)">Add task</h2>
+              <h2 className="text-lg font-semibold text-(--foreground)">
+                Add task
+              </h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-1.5 rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
@@ -691,7 +693,9 @@ const [newProjectName, setNewProjectName] = useState("");
                 />
                 <Select
                   value={mPriority}
-                  onChange={(val) => setMPriority((val as Todo["priority"]) || "medium")}
+                  onChange={(val) =>
+                    setMPriority((val as Todo["priority"]) || "medium")
+                  }
                   options={priorityOptions}
                   placeholder="Priority"
                   icon={<Flag size={15} />}
@@ -716,9 +720,11 @@ const [newProjectName, setNewProjectName] = useState("");
                 onClick={async () => {
                   if (!mTitle.trim()) return;
                   await addTodo({
-                    projectId: (mProjectId || selectedProject) || undefined,
+                    projectId: mProjectId || selectedProject || undefined,
                     title: mTitle,
-                    dueDate: mDueDate ? format(mDueDate, "yyyy-MM-dd") : undefined,
+                    dueDate: mDueDate
+                      ? format(mDueDate, "yyyy-MM-dd")
+                      : undefined,
                     priority: mPriority,
                   });
                   setMTitle("");

@@ -77,19 +77,13 @@ export default function HealthPage() {
     const period = searchParams.get("period") as TimeFilter | null;
     const t = searchParams.get("type") as HealthLog["type"] | null;
     if (period && ["today", "week", "month", "all"].includes(period)) {
-      setTimeout(() => {
-        setTimeFilter(period);
-      }, 0);
+      setTimeFilter(period);
     }
     if (t && ["water", "gym", "sleep", "diet", "custom"].includes(t)) {
-      setTimeout(() => {
-        setType(t);
-      }, 0);
+      setType(t);
     }
     if (add === "1") {
-      setTimeout(() => {
-        setShowForm(true);
-      }, 0);
+      setShowForm(true);
     }
   }, [searchParams]);
 

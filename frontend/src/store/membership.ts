@@ -21,8 +21,16 @@ type MembershipState = {
 
   fetchMembers: (projectId: string) => Promise<void>;
   fetchCurrentUserRole: (projectId: string) => Promise<void>;
-  addMember: (projectId: string, email: string, role?: ProjectRole) => Promise<void>;
-  updateMemberRole: (projectId: string, memberId: string, role: ProjectRole) => Promise<void>;
+  addMember: (
+    projectId: string,
+    email: string,
+    role?: ProjectRole
+  ) => Promise<void>;
+  updateMemberRole: (
+    projectId: string,
+    memberId: string,
+    role: ProjectRole
+  ) => Promise<void>;
   removeMember: (projectId: string, memberId: string) => Promise<void>;
   searchUserByEmail: (email: string) => Promise<void>;
   clearSearchedUser: () => void;
@@ -77,7 +85,9 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
         { method: "POST", body: { email, role } }
       );
       set({ members: [...get().members, data.member], searchedUser: null });
-      useToastStore.getState().push({ message: "Member added", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Member added", type: "success" });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to add member";
@@ -99,7 +109,9 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
           m.userId === memberId ? data.member : m
         ),
       });
-      useToastStore.getState().push({ message: "Role updated", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Role updated", type: "success" });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to update role";
@@ -116,7 +128,9 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
         method: "DELETE",
       });
       set({ members: get().members.filter((m) => m.userId !== memberId) });
-      useToastStore.getState().push({ message: "Member removed", type: "success" });
+      useToastStore
+        .getState()
+        .push({ message: "Member removed", type: "success" });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to remove member";

@@ -27,8 +27,8 @@ export const apiRequest = async <T>(
   let data: unknown = null;
   try {
     data = await response.json();
-  } catch {
-    /* ignore */
+  } catch (error) {
+    console.error(error);
   }
 
   if (!response.ok) {

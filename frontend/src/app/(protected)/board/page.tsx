@@ -76,12 +76,6 @@ export default function BoardPage() {
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (projects.length && !projectId) {
-      setProjectId(projects[0].id);
-    }
-  }, [projects, projectId]);
-
-  useEffect(() => {
     if (projectId) {
       fetchBoard(projectId);
       fetchCurrentUserRole(projectId);
@@ -90,7 +84,6 @@ export default function BoardPage() {
     }
   }, [projectId, fetchBoard, fetchCurrentUserRole, fetchMembers]);
 
-  // Filter tasks by selected members
   const filteredTasks =
     filterMemberIds.length > 0
       ? tasks.filter((t) => {
@@ -163,7 +156,9 @@ export default function BoardPage() {
   const getInitials = (name: string) => {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
   };
 
   const selectedProject = projects.find((p) => p.id === projectId);
@@ -240,7 +235,10 @@ export default function BoardPage() {
   const projectSidebar = (
     <div className="space-y-6">
       <button
-        onClick={() => setShowProjectSidebar(false)}
+        onClick={() => {
+          setProjectId("");
+          setShowProjectSidebar(false);
+        }}
         className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors"
       >
         <ArrowLeft size={16} />
@@ -338,29 +336,31 @@ export default function BoardPage() {
         <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
           Actions
         </h3>
-        {columns.length === 0 && projectId && canEdit && (
+        <div className="space-y-2">
+          {columns.length === 0 && projectId && canEdit && (
+            <button
+              onClick={handleInitBoard}
+              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors"
+            >
+              <Columns size={16} />
+              Initialize Board
+            </button>
+          )}
           <button
-            onClick={handleInitBoard}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors"
+            onClick={() => projectId && fetchBoard(projectId)}
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
           >
-            <Columns size={16} />
-            Initialize Board
+            <RefreshCw size={16} />
+            Refresh
           </button>
-        )}
-        <button
-          onClick={() => projectId && fetchBoard(projectId)}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-        >
-          <RefreshCw size={16} />
-          Refresh
-        </button>
-        <button
-          onClick={() => router.push(`/board/${projectId}/settings`)}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-        >
-          <Settings size={16} />
-          {isAdmin ? "Manage Members" : "View Members"}
-        </button>
+          <button
+            onClick={() => router.push(`/board/${projectId}/settings`)}
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
+          >
+            <Settings size={16} />
+            {isAdmin ? "Manage Members" : "View Members"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -609,13 +609,15 @@ export default function BoardPage() {
         ) : (
           <div className="rounded-xl border border-(--border) border-dashed bg-(--card) p-12 text-center">
             <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-(--accent)/10 text-(--accent)">
-              <Layout size={24} />
+              {projectId ? <Layout size={24} /> : <FolderKanban size={24} />}
             </div>
             <h3 className="mt-4 text-base font-semibold text-(--foreground)">
-              No board columns
+              {projectId ? "No board columns" : "No project selected"}
             </h3>
             <p className="mt-1 text-sm text-(--muted)">
-              Initialize the board to create default columns.
+              {projectId
+                ? "Initialize the board to create default columns."
+                : "Select a project from the sidebar to view its board."}
             </p>
             {projectId && (
               <button
