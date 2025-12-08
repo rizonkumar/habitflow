@@ -17,6 +17,9 @@ import {
   Calendar,
   CalendarDays,
   CalendarRange,
+  Activity,
+  TrendingUp,
+  X,
 } from "lucide-react";
 
 type TimeFilter = "today" | "week" | "month" | "all";
@@ -24,37 +27,60 @@ type TypeFilter = HealthLog["type"] | "all";
 
 const typeConfig: Record<
   HealthLog["type"],
-  { icon: React.ReactNode; color: string; bg: string; label: string }
+  {
+    icon: React.ReactNode;
+    color: string;
+    bg: string;
+    gradient: string;
+    border: string;
+    label: string;
+    emoji: string;
+  }
 > = {
   water: {
     icon: <Droplets size={18} />,
     color: "text-blue-500",
     bg: "bg-blue-500",
+    gradient: "from-blue-500/20 to-cyan-500/10",
+    border: "border-blue-500/30",
     label: "Water",
+    emoji: "💧",
   },
   gym: {
     icon: <Dumbbell size={18} />,
     color: "text-orange-500",
     bg: "bg-orange-500",
+    gradient: "from-orange-500/20 to-amber-500/10",
+    border: "border-orange-500/30",
     label: "Gym",
+    emoji: "🏋️",
   },
   sleep: {
     icon: <Moon size={18} />,
     color: "text-indigo-500",
     bg: "bg-indigo-500",
+    gradient: "from-indigo-500/20 to-purple-500/10",
+    border: "border-indigo-500/30",
     label: "Sleep",
+    emoji: "😴",
   },
   diet: {
     icon: <Utensils size={18} />,
     color: "text-green-500",
     bg: "bg-green-500",
+    gradient: "from-green-500/20 to-emerald-500/10",
+    border: "border-green-500/30",
     label: "Diet",
+    emoji: "🥗",
   },
   custom: {
     icon: <Sparkles size={18} />,
     color: "text-purple-500",
     bg: "bg-purple-500",
+    gradient: "from-purple-500/20 to-pink-500/10",
+    border: "border-purple-500/30",
     label: "Custom",
+    emoji: "✨",
   },
 };
 
@@ -135,26 +161,32 @@ export default function HealthPage() {
     return acc;
   }, {} as Record<HealthLog["type"], number>);
 
+  const totalTodayLogs = todayLogs.length;
+  const selectedTypeConfig = typeConfig[type];
+
   const sidebar = (
     <div className="space-y-6">
       <button
         onClick={() => setShowForm(!showForm)}
-        className="flex items-center justify-center gap-2 w-full rounded-lg bg-(--primary) px-4 py-2.5 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover)"
+        className="group flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-4 py-3 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02] active:scale-[0.98]"
       >
-        <Plus size={18} />
+        <Plus
+          size={18}
+          className="transition-transform group-hover:rotate-90"
+        />
         New Log
       </button>
 
       <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
           Time Period
         </h3>
         <nav className="space-y-1">
           <button
             onClick={() => setTimeFilter("today")}
-            className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               timeFilter === "today"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
@@ -163,9 +195,9 @@ export default function HealthPage() {
           </button>
           <button
             onClick={() => setTimeFilter("week")}
-            className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               timeFilter === "week"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
@@ -174,9 +206,9 @@ export default function HealthPage() {
           </button>
           <button
             onClick={() => setTimeFilter("month")}
-            className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               timeFilter === "month"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
@@ -185,9 +217,9 @@ export default function HealthPage() {
           </button>
           <button
             onClick={() => setTimeFilter("all")}
-            className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               timeFilter === "all"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
@@ -198,21 +230,24 @@ export default function HealthPage() {
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
           Activity Type
         </h3>
         <nav className="space-y-1">
           <button
             onClick={() => setTypeFilter("all")}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               typeFilter === "all"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span>All Types</span>
-            <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
-              {todayLogs.length}
+            <span className="flex items-center gap-2.5">
+              <Activity size={16} />
+              All Types
+            </span>
+            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
+              {totalTodayLogs}
             </span>
           </button>
           {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
@@ -221,17 +256,17 @@ export default function HealthPage() {
               <button
                 key={key}
                 onClick={() => setTypeFilter(key)}
-                className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                   typeFilter === key
-                    ? `${config.bg}/10 ${config.color}`
+                    ? `bg-gradient-to-r ${config.gradient} ${config.color} shadow-sm`
                     : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2.5">
                   {config.icon}
                   {config.label}
                 </span>
-                <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
+                <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
                   {typeCounts[key]}
                 </span>
               </button>
@@ -244,165 +279,266 @@ export default function HealthPage() {
 
   return (
     <AppShell sidebar={sidebar}>
-      <div className="max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-(--foreground)">Health</h1>
-          <p className="mt-1 text-sm text-(--muted)">
-            {timeFilter === "today"
-              ? "Today's activities"
-              : timeFilter === "week"
-              ? "This week"
-              : timeFilter === "month"
-              ? "This month"
-              : "All activities"}
-            {typeFilter !== "all" && ` • ${typeConfig[typeFilter].label}`}
-          </p>
+      <div className="w-full max-w-5xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 text-rose-500">
+                <Heart size={20} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-(--foreground) tracking-tight">
+                  Health
+                </h1>
+                <p className="text-sm text-(--muted)">
+                  {timeFilter === "today"
+                    ? "Today's activities"
+                    : timeFilter === "week"
+                    ? "This week"
+                    : timeFilter === "month"
+                    ? "This month"
+                    : "All activities"}
+                  {typeFilter !== "all" && ` • ${typeConfig[typeFilter].label}`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-(--secondary)/50 border border-(--border)">
+            <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--muted)">
+              <TrendingUp size={14} />
+              <span className="font-medium text-(--foreground)">
+                {totalTodayLogs}
+              </span>
+              <span className="hidden sm:inline">today</span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
             const config = typeConfig[key];
+            const count = typeCounts[key];
             return (
-              <div
+              <button
                 key={key}
-                className="rounded-xl border border-(--border) bg-(--card) p-3"
+                onClick={() => setTypeFilter(typeFilter === key ? "all" : key)}
+                className={`group relative rounded-2xl border-2 bg-(--card) p-4 transition-all hover:shadow-lg hover:-translate-y-0.5 ${
+                  typeFilter === key
+                    ? `${config.border} shadow-lg`
+                    : "border-(--border) hover:border-(--primary)/30"
+                }`}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-lg ${config.bg}/10 ${config.color}`}
-                  >
-                    {config.icon}
+                <div
+                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient} opacity-50`}
+                />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <div
+                      className={`flex items-center justify-center w-10 h-10 rounded-xl ${config.bg}/20 ${config.color} transition-transform group-hover:scale-110`}
+                    >
+                      {config.icon}
+                    </div>
+                    {count > 0 && (
+                      <span
+                        className={`text-xs font-bold px-2 py-1 rounded-lg ${config.bg}/20 ${config.color}`}
+                      >
+                        +{count}
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-lg font-semibold text-(--foreground)">
-                      {typeCounts[key]}
-                    </p>
-                    <p className="text-xs text-(--muted)">{config.label}</p>
-                  </div>
+                  <p className="text-2xl font-bold text-(--foreground)">
+                    {count}
+                  </p>
+                  <p className="text-xs font-medium text-(--muted) mt-0.5">
+                    {config.label}
+                  </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
         {showForm && (
-          <div className="rounded-xl border border-(--border) bg-(--card) p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-(--destructive)/10 text-(--destructive)">
-                <Heart size={20} />
-              </div>
-              <h2 className="text-lg font-semibold text-(--foreground)">
-                Log health activity
-              </h2>
-            </div>
-            <form className="grid gap-4 sm:grid-cols-4" onSubmit={onAdd}>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-(--foreground)">
-                  Type
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as HealthLog["type"])}
-                  className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2.5 text-sm text-(--foreground) outline-none transition-colors focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                >
-                  <option value="water">💧 Water</option>
-                  <option value="gym">🏋️ Gym</option>
-                  <option value="sleep">😴 Sleep</option>
-                  <option value="diet">🥗 Diet</option>
-                  <option value="custom">✨ Custom</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-(--foreground)">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  value={amount ?? ""}
-                  onChange={(e) =>
-                    setAmount(
-                      e.target.value ? Number(e.target.value) : undefined
-                    )
-                  }
-                  placeholder="e.g. 500"
-                  className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-colors focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-(--foreground)">
-                  Unit
-                </label>
-                <input
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  placeholder="ml, hrs, mins"
-                  className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-colors focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                />
-              </div>
-              <div className="flex items-end gap-2">
+          <div className="rounded-2xl border-2 border-(--primary)/50 bg-(--card) overflow-hidden shadow-xl shadow-(--primary)/5 animate-in">
+            <div
+              className={`p-5 bg-gradient-to-r ${selectedTypeConfig.gradient}`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex items-center justify-center w-12 h-12 rounded-xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color}`}
+                  >
+                    {selectedTypeConfig.icon}
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-(--foreground)">
+                      Log health activity
+                    </h2>
+                    <p className="text-sm text-(--muted)">
+                      Track your daily wellness habits
+                    </p>
+                  </div>
+                </div>
                 <button
-                  type="submit"
-                  className="flex-1 rounded-lg bg-(--primary) px-4 py-2.5 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover)"
+                  onClick={() => setShowForm(false)}
+                  className="p-2 rounded-xl text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
                 >
-                  Add
+                  <X size={18} />
                 </button>
+              </div>
+            </div>
+            <form className="p-5" onSubmit={onAdd}>
+              <div className="grid gap-4 sm:grid-cols-3 mb-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-(--foreground)">
+                    Activity Type
+                  </label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {(Object.keys(typeConfig) as HealthLog["type"][]).map(
+                      (key) => {
+                        const config = typeConfig[key];
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setType(key)}
+                            className={`flex items-center justify-center w-full aspect-square rounded-xl border-2 transition-all ${
+                              type === key
+                                ? `${config.border} ${config.bg}/20 ${config.color} shadow-lg scale-105`
+                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                            }`}
+                            title={config.label}
+                          >
+                            {config.icon}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                  <p className="text-xs text-(--muted) text-center">
+                    Selected:{" "}
+                    <span className={selectedTypeConfig.color}>
+                      {selectedTypeConfig.label}
+                    </span>
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-(--foreground)">
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={amount ?? ""}
+                    onChange={(e) =>
+                      setAmount(
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
+                    }
+                    placeholder="e.g. 500"
+                    className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-(--foreground)">
+                    Unit
+                  </label>
+                  <input
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    placeholder="ml, hrs, mins, etc."
+                    className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-lg border border-(--border) px-4 py-2.5 text-sm font-medium text-(--foreground) transition-colors hover:bg-(--card-hover)"
+                  className="rounded-xl border border-(--border) px-5 py-2.5 text-sm font-medium text-(--foreground) transition-colors hover:bg-(--card-hover)"
                 >
                   Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-5 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02]"
+                >
+                  <Plus size={16} />
+                  Add Log
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {Object.entries(logsByDate).length > 0 ? (
             Object.entries(logsByDate)
               .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
               .map(([date, dateLogs]) => (
                 <div key={date}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Calendar size={14} className="text-(--muted)" />
-                    <h3 className="text-sm font-medium text-(--muted)">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-(--secondary) text-(--muted)">
+                      <Calendar size={14} />
+                    </div>
+                    <h3 className="text-sm font-semibold text-(--foreground)">
                       {new Date(date).toDateString() ===
                       new Date().toDateString()
                         ? "Today"
-                        : date}
+                        : new Date(date).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                          })}
                     </h3>
+                    <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full text-(--muted)">
+                      {dateLogs.length} {dateLogs.length === 1 ? "log" : "logs"}
+                    </span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {dateLogs.map((log) => {
                       const config = typeConfig[log.type];
                       return (
                         <div
                           key={log.id}
-                          className="group flex items-center gap-4 rounded-xl border border-(--border) bg-(--card) p-4 transition-colors hover:bg-(--card-hover)"
+                          className={`group relative rounded-2xl border-2 bg-(--card) p-4 transition-all hover:shadow-lg hover:-translate-y-0.5 ${config.border}`}
                         >
                           <div
-                            className={`flex items-center justify-center w-10 h-10 rounded-lg ${config.bg}/10 ${config.color}`}
-                          >
-                            {config.icon}
+                            className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient} opacity-30`}
+                          />
+                          <div className="relative flex items-center gap-4">
+                            <div
+                              className={`flex items-center justify-center w-12 h-12 rounded-xl ${config.bg}/20 ${config.color}`}
+                            >
+                              {config.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-(--foreground)">
+                                {config.label}
+                              </p>
+                              <p className="text-xs text-(--muted) mt-0.5">
+                                {log.amount !== undefined && log.amount !== null
+                                  ? `${log.amount} ${log.unit || ""}`
+                                  : "Activity logged"}
+                              </p>
+                              <p className="text-[10px] text-(--muted) mt-1">
+                                {new Date(log.date).toLocaleTimeString(
+                                  "en-US",
+                                  {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteLog(log.id)}
+                              className="flex items-center justify-center w-9 h-9 rounded-xl text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-(--foreground)">
-                              {config.label}
-                            </p>
-                            <p className="text-xs text-(--muted)">
-                              {log.amount !== undefined && log.amount !== null
-                                ? `${log.amount} ${log.unit || ""}`
-                                : "Logged"}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => deleteLog(log.id)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-(--destructive)/10 hover:text-(--destructive) transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
                         </div>
                       );
                     })}
@@ -410,25 +546,25 @@ export default function HealthPage() {
                 </div>
               ))
           ) : (
-            <div className="rounded-xl border border-(--border) border-dashed bg-(--card) p-12 text-center">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-(--destructive)/10 text-(--destructive)">
-                <Heart size={24} />
+            <div className="rounded-2xl border-2 border-dashed border-(--border) bg-(--card) p-12 sm:p-16 text-center">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 text-rose-500">
+                <Heart size={28} />
               </div>
-              <h3 className="mt-4 text-base font-semibold text-(--foreground)">
+              <h3 className="mt-6 text-xl font-semibold text-(--foreground)">
                 No health logs
               </h3>
-              <p className="mt-1 text-sm text-(--muted)">
+              <p className="mt-2 text-sm text-(--muted) max-w-md mx-auto">
                 {timeFilter !== "all" || typeFilter !== "all"
-                  ? "Try adjusting your filters."
-                  : "Start tracking your daily health habits."}
+                  ? "Try adjusting your filters to see more activities."
+                  : "Start tracking your daily health habits to see your progress here."}
               </p>
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-(--primary) px-4 py-2 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover)"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-6 py-3 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02]"
               >
                 <Plus size={16} />
-                Log Activity
+                Log Your First Activity
               </button>
             </div>
           )}

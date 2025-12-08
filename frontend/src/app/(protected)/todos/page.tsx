@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { useProjectStore } from "../../../store/projects";
 import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
@@ -26,9 +26,41 @@ import {
   Inbox as InboxIcon,
   Flag,
   Bell,
+  Sparkles,
+  LayoutGrid,
+  List,
+  Clock,
 } from "lucide-react";
 
 type FilterType = "all" | "inbox" | "today" | "upcoming" | "completed";
+type ViewMode = "list" | "grid";
+
+// Helper to safely parse and format dates
+const formatDueDate = (dateStr: string | undefined): string | null => {
+  if (!dateStr) return null;
+  try {
+    // Handle ISO strings and date-only strings
+    const date = dateStr.includes("T")
+      ? parseISO(dateStr)
+      : new Date(dateStr + "T00:00:00");
+    if (!isValid(date)) return null;
+    return format(date, "MMM d");
+  } catch {
+    return null;
+  }
+};
+
+const parseDueDate = (dateStr: string | undefined): Date | null => {
+  if (!dateStr) return null;
+  try {
+    const date = dateStr.includes("T")
+      ? parseISO(dateStr)
+      : new Date(dateStr + "T00:00:00");
+    return isValid(date) ? date : null;
+  } catch {
+    return null;
+  }
+};
 
 export default function TodosPage() {
   const { projects, fetchProjects, createProject } = useProjectStore();
@@ -48,6 +80,7 @@ export default function TodosPage() {
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const searchParams = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [chosenProjectId, setChosenProjectId] = useState<string | null>(null);
@@ -112,9 +145,11 @@ export default function TodosPage() {
       result = result.filter((t) => t.status === "todo");
     } else if (filterType === "upcoming") {
       const now = new Date();
-      result = result.filter(
-        (t) => t.status === "todo" && t.dueDate && new Date(t.dueDate) > now
-      );
+      result = result.filter((t) => {
+        if (t.status !== "todo" || !t.dueDate) return false;
+        const parsed = parseDueDate(t.dueDate);
+        return parsed && parsed > now;
+      });
     } else if (filterType === "all" && !selectedProject) {
       result = result.filter((t) => t.status === "todo");
     }
@@ -134,7 +169,6 @@ export default function TodosPage() {
   ).length;
   const completedCount = items.filter((t) => t.status === "completed").length;
 
-  // Priority options for Select
   const priorityOptions: SelectOption[] = [
     { value: "high", label: "High", color: "var(--destructive)" },
     { value: "medium", label: "Medium", color: "var(--warning)" },
@@ -206,15 +240,45 @@ export default function TodosPage() {
     setSelectedProject(created.id);
   };
 
+  const getPriorityStyles = (priority: Todo["priority"]) => {
+    switch (priority) {
+      case "high":
+        return {
+          bg: "bg-gradient-to-r from-red-500/10 to-orange-500/10",
+          border: "border-red-500/30",
+          text: "text-red-500",
+          dot: "bg-red-500",
+        };
+      case "medium":
+        return {
+          bg: "bg-gradient-to-r from-amber-500/10 to-yellow-500/10",
+          border: "border-amber-500/30",
+          text: "text-amber-500",
+          dot: "bg-amber-500",
+        };
+      case "low":
+        return {
+          bg: "bg-gradient-to-r from-slate-500/10 to-gray-500/10",
+          border: "border-slate-500/30",
+          text: "text-slate-400",
+          dot: "bg-slate-400",
+        };
+    }
+  };
+
   const sidebar = (
     <div className="space-y-6">
       <button
         onClick={() => setShowAddModal(true)}
-        className="flex items-center justify-center gap-2 w-full rounded-lg bg-(--primary) px-4 py-2.5 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover)"
+        className="group flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-4 py-3 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02] active:scale-[0.98]"
       >
-        <Plus size={18} />
+        <Plus
+          size={18}
+          className="transition-transform group-hover:rotate-90"
+        />
         Add task
       </button>
+
       {/* Search */}
       <div className="relative">
         <Search
@@ -226,12 +290,12 @@ export default function TodosPage() {
           placeholder="Search todos..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-lg border border-(--input-border) bg-(--input) pl-9 pr-3 py-2 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring)"
+          className="w-full rounded-xl border border-(--input-border) bg-(--input) pl-9 pr-3 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20 transition-all"
         />
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
           Views
         </h3>
         <nav className="space-y-1">
@@ -240,17 +304,17 @@ export default function TodosPage() {
               setSelectedProject(null);
               setFilterType("all");
             }}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               !selectedProject && filterType === "all"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <CheckSquare size={16} />
               All Tasks
             </span>
-            <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
+            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
               {todoCount}
             </span>
           </button>
@@ -259,17 +323,17 @@ export default function TodosPage() {
               setSelectedProject(null);
               setFilterType("inbox");
             }}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               !selectedProject && filterType === "inbox"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <InboxIcon size={16} />
               No Project
             </span>
-            <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
+            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
               {inboxCount}
             </span>
           </button>
@@ -278,13 +342,13 @@ export default function TodosPage() {
               setSelectedProject(null);
               setFilterType("today");
             }}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               !selectedProject && filterType === "today"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <Calendar size={16} />
               Today
             </span>
@@ -294,13 +358,13 @@ export default function TodosPage() {
               setSelectedProject(null);
               setFilterType("upcoming");
             }}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               !selectedProject && filterType === "upcoming"
-                ? "bg-(--primary)/10 text-(--primary)"
+                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <CalendarDays size={16} />
               Upcoming
             </span>
@@ -310,17 +374,17 @@ export default function TodosPage() {
               setSelectedProject(null);
               setFilterType("completed");
             }}
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               !selectedProject && filterType === "completed"
-                ? "bg-(--success)/10 text-(--success)"
+                ? "bg-gradient-to-r from-(--success)/15 to-(--success)/5 text-(--success) shadow-sm"
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <CheckCircle2 size={16} />
               Completed
             </span>
-            <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
+            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
               {completedCount}
             </span>
           </button>
@@ -328,43 +392,43 @@ export default function TodosPage() {
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
           Priority
         </h3>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--muted)">
-            <span className="w-2 h-2 rounded-full bg-(--destructive)"></span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 shadow-sm shadow-red-500/30"></span>
             High
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--muted)">
-            <span className="w-2 h-2 rounded-full bg-(--warning)"></span>
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 shadow-sm shadow-amber-500/30"></span>
             Medium
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--muted)">
-            <span className="w-2 h-2 rounded-full bg-(--muted)"></span>
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-slate-400 to-gray-400 shadow-sm shadow-slate-400/30"></span>
             Low
           </div>
         </div>
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
             My Projects
           </h3>
           <button
             onClick={() => setShowNewProject((v) => !v)}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover)"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover) hover:border-(--primary)/30 transition-all"
           >
             <FolderPlus size={14} /> New
           </button>
         </div>
 
         {showNewProject && (
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-3 flex items-center gap-2">
             <input
-              className="flex-1 rounded-md border border-(--input-border) bg-(--input) px-2 py-1.5 text-sm text-(--foreground) outline-none focus:border-(--ring)"
-              placeholder="New project name"
+              className="flex-1 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+              placeholder="Project name"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
               onKeyDown={(e) => {
@@ -374,7 +438,7 @@ export default function TodosPage() {
               autoFocus
             />
             <button
-              className="rounded-md bg-(--primary) text-(--primary-foreground) text-xs px-3 py-1.5 hover:bg-(--primary-hover)"
+              className="rounded-lg bg-(--primary) text-(--primary-foreground) text-xs px-3 py-2 hover:bg-(--primary-hover) transition-colors"
               onClick={createTodoProject}
             >
               Create
@@ -389,20 +453,22 @@ export default function TodosPage() {
               onClick={() =>
                 setSelectedProject((curr) => (curr === p.id ? null : p.id))
               }
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all ${
                 selectedProject === p.id
-                  ? "bg-(--primary)/10 text-(--primary)"
+                  ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
                   : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
               }`}
             >
-              <span className="flex items-center gap-2 truncate">
+              <span className="flex items-center gap-2.5 truncate">
                 <FolderKanban size={16} />
                 <span className="truncate">{p.name}</span>
               </span>
             </button>
           ))}
           {projects.length === 0 && (
-            <div className="text-xs text-(--muted)">No projects yet</div>
+            <div className="text-xs text-(--muted) text-center py-4 border border-dashed border-(--border) rounded-xl">
+              No projects yet
+            </div>
           )}
         </nav>
       </div>
@@ -411,37 +477,75 @@ export default function TodosPage() {
 
   return (
     <AppShell sidebar={sidebar}>
-      <div className="max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-(--foreground)">Todos</h1>
-          <p className="mt-1 text-sm text-(--muted)">
-            {selectedProject
-              ? `Project: ${
-                  projects.find((p) => p.id === selectedProject)?.name ??
-                  "Unknown"
-                }`
-              : filterType === "all"
-              ? "All tasks"
-              : filterType === "inbox"
-              ? "No Project"
-              : filterType === "today"
-              ? "Tasks for today"
-              : filterType === "upcoming"
-              ? "Upcoming tasks"
-              : "Completed tasks"}
-          </p>
+      <div className="w-full max-w-5xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-(--primary)/20 to-(--accent)/20 text-(--primary)">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-(--foreground) tracking-tight">
+                  Todos
+                </h1>
+                <p className="text-sm text-(--muted)">
+                  {selectedProject
+                    ? `Project: ${
+                        projects.find((p) => p.id === selectedProject)?.name ??
+                        "Unknown"
+                      }`
+                    : filterType === "all"
+                    ? "All tasks"
+                    : filterType === "inbox"
+                    ? "No Project"
+                    : filterType === "today"
+                    ? "Tasks for today"
+                    : filterType === "upcoming"
+                    ? "Upcoming tasks"
+                    : "Completed tasks"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-(--secondary)">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "list"
+                  ? "bg-(--card) text-(--foreground) shadow-sm"
+                  : "text-(--muted) hover:text-(--foreground)"
+              }`}
+            >
+              <List size={16} />
+              <span className="hidden sm:inline">List</span>
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "grid"
+                  ? "bg-(--card) text-(--foreground) shadow-sm"
+                  : "text-(--muted) hover:text-(--foreground)"
+              }`}
+            >
+              <LayoutGrid size={16} />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+          </div>
         </div>
 
         <form
           onSubmit={onAdd}
-          className={`rounded-2xl border ${
-            composerOpen ? "border-(--ring) shadow-lg" : "border-(--border)"
-          } bg-(--card) p-4 shadow-sm transition-all`}
+          className={`rounded-2xl border-2 transition-all ${
+            composerOpen
+              ? "border-(--primary)/50 shadow-xl shadow-(--primary)/5 bg-(--card)"
+              : "border-(--border) bg-(--card) hover:border-(--primary)/30"
+          } p-4 sm:p-5`}
         >
           <div className="relative mb-4">
             <input
               id="new-todo-input"
-              className="w-full rounded-xl border-0 bg-(--secondary)/50 pl-11 pr-4 py-3.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:bg-(--secondary) focus:ring-2 focus:ring-(--ring)/30"
+              className="w-full rounded-xl border-0 bg-(--secondary)/50 pl-11 pr-4 py-3.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:bg-(--secondary) focus:ring-2 focus:ring-(--ring)/20"
               placeholder="What needs to be done?"
               value={title}
               onFocus={() => setComposerOpen(true)}
@@ -453,7 +557,7 @@ export default function TodosPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <DatePicker
               value={dueDate}
               onChange={setDueDate}
@@ -483,7 +587,7 @@ export default function TodosPage() {
             <button
               type="button"
               disabled
-              className="inline-flex items-center gap-2 rounded-lg border border-(--border) px-3 py-2 text-sm font-medium text-(--muted) opacity-50 cursor-not-allowed"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-(--border) px-3 py-2 text-sm font-medium text-(--muted) opacity-50 cursor-not-allowed"
             >
               <Bell size={15} />
               Reminders
@@ -494,20 +598,26 @@ export default function TodosPage() {
             <button
               type="submit"
               disabled={!title.trim()}
-              className="flex items-center gap-2 rounded-xl bg-(--primary) px-5 py-2.5 text-sm font-medium text-(--primary-foreground) transition-all hover:bg-(--primary-hover) hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-5 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <Plus size={16} />
-              Add task
+              <span className="hidden sm:inline">Add task</span>
             </button>
           </div>
         </form>
 
-        <div className="space-y-2">
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              : "space-y-3"
+          }
+        >
           {loading ? (
             Array.from({ length: 4 }).map((_, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-(--border) bg-(--card) p-4"
+                className="rounded-2xl border border-(--border) bg-(--card) p-4"
               >
                 <div className="flex items-center gap-3">
                   <Skeleton className="w-6 h-6 rounded-full" />
@@ -516,173 +626,215 @@ export default function TodosPage() {
               </div>
             ))
           ) : filteredTodos.length > 0 ? (
-            filteredTodos.map((todo) => (
-              <div
-                key={todo.id}
-                className={`group rounded-xl border bg-(--card) p-4 transition-colors ${
-                  todo.status === "completed"
-                    ? "border-(--border) opacity-70"
-                    : "border-(--border) hover:border-(--primary)/30"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleTodo(
-                        todo.id,
-                        todo.status === "todo" ? "completed" : "todo"
-                      )
-                    }
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-colors ${
-                      todo.status === "completed"
-                        ? "bg-(--success) border-(--success) text-white"
-                        : "border-(--border) hover:border-(--primary) text-transparent hover:text-(--primary)"
-                    }`}
-                  >
-                    <Check size={14} />
-                  </button>
+            filteredTodos.map((todo) => {
+              const priorityStyle = getPriorityStyles(todo.priority);
+              return (
+                <div
+                  key={todo.id}
+                  className={`group rounded-2xl border-2 bg-(--card) p-4 transition-all hover:shadow-lg ${
+                    todo.status === "completed"
+                      ? "border-(--border) opacity-60"
+                      : `${priorityStyle.border} hover:shadow-xl hover:shadow-(--primary)/5 hover:-translate-y-0.5`
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleTodo(
+                          todo.id,
+                          todo.status === "todo" ? "completed" : "todo"
+                        )
+                      }
+                      className={`flex items-center justify-center w-6 h-6 mt-0.5 rounded-full border-2 transition-all ${
+                        todo.status === "completed"
+                          ? "bg-(--success) border-(--success) text-white"
+                          : `border-current ${priorityStyle.text} hover:bg-current/10`
+                      }`}
+                    >
+                      <Check
+                        size={14}
+                        className={
+                          todo.status === "completed"
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-50"
+                        }
+                      />
+                    </button>
 
-                  <div className="flex-1 min-w-0">
-                    {editingId === todo.id ? (
-                      <>
-                        <input
-                          className="w-full rounded-md border border-(--input-border) bg-(--input) px-2 py-1 text-sm text-(--foreground) outline-none focus:border-(--ring)"
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                          autoFocus
-                        />
-                        <div className="mt-2">
-                          <select
-                            value={editingPriority ?? todo.priority}
-                            onChange={(e) =>
-                              setEditingPriority(
-                                e.target.value as Todo["priority"]
-                              )
-                            }
-                            className="w-fit rounded-md border border-(--input-border) bg-(--input) px-2 py-1 text-xs text-(--foreground) outline-none focus:border-(--ring)"
-                          >
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                          </select>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p
-                          className={`text-sm font-medium ${
-                            todo.status === "completed"
-                              ? "text-(--muted) line-through"
-                              : "text-(--foreground)"
-                          }`}
-                        >
-                          {todo.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              todo.priority === "high"
-                                ? "bg-(--destructive)/10 text-(--destructive)"
-                                : todo.priority === "medium"
-                                ? "bg-(--warning)/10 text-(--warning)"
-                                : "bg-(--secondary) text-(--muted)"
+                    <div className="flex-1 min-w-0">
+                      {editingId === todo.id ? (
+                        <>
+                          <input
+                            className="w-full rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            autoFocus
+                          />
+                          <div className="mt-2">
+                            <select
+                              value={editingPriority ?? todo.priority}
+                              onChange={(e) =>
+                                setEditingPriority(
+                                  e.target.value as Todo["priority"]
+                                )
+                              }
+                              className="w-fit rounded-lg border border-(--input-border) bg-(--input) px-3 py-1.5 text-xs text-(--foreground) outline-none focus:border-(--ring)"
+                            >
+                              <option value="high">High</option>
+                              <option value="medium">Medium</option>
+                              <option value="low">Low</option>
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p
+                            className={`text-sm font-medium leading-relaxed ${
+                              todo.status === "completed"
+                                ? "text-(--muted) line-through"
+                                : "text-(--foreground)"
                             }`}
                           >
-                            {todo.priority}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                            {todo.title}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${priorityStyle.bg} ${priorityStyle.text}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${priorityStyle.dot}`}
+                              ></span>
+                              {todo.priority}
+                            </span>
+                            {formatDueDate(todo.dueDate) && (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-(--muted) px-2.5 py-1 rounded-full bg-(--secondary)">
+                                <Clock size={12} />
+                                {formatDueDate(todo.dueDate)}
+                              </span>
+                            )}
+                            {todo.projectId && (
+                              <span className="inline-flex items-center gap-1.5 text-xs text-(--primary) px-2.5 py-1 rounded-full bg-(--primary)/10">
+                                <FolderKanban size={12} />
+                                {
+                                  projects.find((p) => p.id === todo.projectId)
+                                    ?.name
+                                }
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
 
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {editingId === todo.id ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={saveEdit}
-                          className="flex items-center justify-center w-8 h-8 rounded-lg text-(--success) hover:bg-(--success)/10 transition-colors"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEdit}
-                          className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) hover:bg-(--card-hover) transition-colors"
-                        >
-                          <X size={16} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => startEdit(todo)}
-                          className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        {todo.status === "completed" && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {editingId === todo.id ? (
+                        <>
                           <button
                             type="button"
-                            onClick={() => toggleTodo(todo.id, "todo")}
+                            onClick={saveEdit}
+                            className="flex items-center justify-center w-8 h-8 rounded-lg text-(--success) hover:bg-(--success)/10 transition-colors"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) hover:bg-(--card-hover) transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => startEdit(todo)}
                             className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
                           >
-                            <RotateCcw size={16} />
+                            <Pencil size={16} />
                           </button>
-                        )}
-                      </>
-                    )}
+                          {todo.status === "completed" && (
+                            <button
+                              type="button"
+                              onClick={() => toggleTodo(todo.id, "todo")}
+                              className="flex items-center justify-center w-8 h-8 rounded-lg text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <div className="rounded-xl border border-(--border) border-dashed bg-(--card) p-12 text-center">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-(--success)/10 text-(--success)">
-                <CheckSquare size={24} />
+            <div
+              className={`${
+                viewMode === "grid" ? "col-span-full" : ""
+              } rounded-2xl border-2 border-dashed border-(--border) bg-(--card) p-12 text-center`}
+            >
+              <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-(--success)/20 to-(--primary)/20 text-(--success)">
+                <CheckSquare size={28} />
               </div>
-              <h3 className="mt-4 text-base font-semibold text-(--foreground)">
+              <h3 className="mt-5 text-lg font-semibold text-(--foreground)">
                 {filterType === "all"
                   ? "No todos yet"
                   : `No ${filterType} todos`}
               </h3>
-              <p className="mt-1 text-sm text-(--muted)">
+              <p className="mt-2 text-sm text-(--muted) max-w-sm mx-auto">
                 {filterType === "all"
-                  ? "Add your first todo to get started."
-                  : "Switch filters to see other todos."}
+                  ? "Add your first todo to get started. Stay organized and productive!"
+                  : "Switch filters to see other todos or create a new one."}
               </p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-5 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02]"
+              >
+                <Plus size={16} />
+                Add your first task
+              </button>
             </div>
           )}
         </div>
       </div>
+
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowAddModal(false)}
           />
-          <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-(--border) bg-(--card) shadow-2xl animate-in fade-in-0 zoom-in-95">
+          <div className="relative w-full max-w-lg rounded-2xl border border-(--border) bg-(--card) shadow-2xl animate-in">
             <div className="flex items-center justify-between p-5 border-b border-(--border)">
-              <h2 className="text-lg font-semibold text-(--foreground)">
-                Add task
-              </h2>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-(--primary)/20 to-(--accent)/20 text-(--primary)">
+                  <Plus size={20} />
+                </div>
+                <h2 className="text-lg font-semibold text-(--foreground)">
+                  Add new task
+                </h2>
+              </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
+                className="p-2 rounded-xl text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
             <div className="p-5 space-y-5">
               <div>
+                <label className="block text-sm font-medium text-(--foreground) mb-2">
+                  Task name
+                </label>
                 <input
                   value={mTitle}
                   onChange={(e) => setMTitle(e.target.value)}
                   placeholder="What needs to be done?"
                   autoFocus
-                  className="w-full rounded-xl border-0 bg-(--secondary)/50 px-4 py-3.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:bg-(--secondary) focus:ring-2 focus:ring-(--ring)/30"
+                  className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -709,7 +861,7 @@ export default function TodosPage() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-(--border)">
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-(--border) bg-(--secondary)/30 rounded-b-2xl">
               <button
                 onClick={() => setShowAddModal(false)}
                 className="rounded-xl border border-(--border) px-5 py-2.5 text-sm font-medium hover:bg-(--card-hover) transition-colors"
@@ -734,7 +886,7 @@ export default function TodosPage() {
                   setShowAddModal(false);
                 }}
                 disabled={!mTitle.trim()}
-                className="rounded-xl bg-(--primary) px-5 py-2.5 text-sm font-medium text-(--primary-foreground) hover:bg-(--primary-hover) transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-5 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add task
               </button>
