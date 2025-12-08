@@ -39,13 +39,15 @@ export const createTodo = async ({
     );
   }
   await ensureProjectAccess(projectId, ownerId);
+  const normalizedPriority =
+    typeof priority === "string" ? priority.toLowerCase() : priority;
   const todo = await Todo.create({
     title: title.trim(),
     description: description || "",
     projectId: projectId || null,
     ownerId,
     dueDate,
-    priority: priority || "medium",
+    priority: normalizedPriority || "medium",
     tags: tags || [],
   });
   return todo;
@@ -96,10 +98,13 @@ export const updateTodo = async ({
     );
   }
 
+  const normalizedPriority =
+    typeof priority === "string" ? priority.toLowerCase() : priority;
+
   todo.title = title.trim();
   todo.description = description || "";
   todo.dueDate = dueDate;
-  todo.priority = priority || todo.priority;
+  todo.priority = normalizedPriority || todo.priority;
   todo.tags = tags || [];
   await todo.save();
   return todo;

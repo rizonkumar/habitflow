@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { format } from "date-fns";
 import { useProjectStore } from "../../../store/projects";
 import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
 import { Skeleton } from "../../../components/ui/Skeleton";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { Select, type SelectOption } from "../../../components/ui/Select";
 import {
   Plus,
   CheckSquare,
@@ -21,6 +24,8 @@ import {
   FolderPlus,
   FolderKanban,
   Inbox as InboxIcon,
+  Flag,
+  Bell,
 } from "lucide-react";
 
 type FilterType = "all" | "inbox" | "today" | "upcoming" | "completed";
@@ -33,11 +38,27 @@ export default function TodosPage() {
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [title, setTitle] = useState("");
+const [priority, setPriority] = useState<Todo["priority"]>("medium");
+  const [composerOpen, setComposerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingPriority, setEditingPriority] = useState<
+    Todo["priority"] | null
+  >(null);
   const [showNewProject, setShowNewProject] = useState(false);
 const [newProjectName, setNewProjectName] = useState("");
   const searchParams = useSearchParams();
+
+  // Inline add fields
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [chosenProjectId, setChosenProjectId] = useState<string | null>(null);
+
+  // Modal fields
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [mTitle, setMTitle] = useState("");
+  const [mDueDate, setMDueDate] = useState<Date | undefined>(undefined);
+  const [mPriority, setMPriority] = useState<Todo["priority"]>("medium");
+  const [mProjectId, setMProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects("todo");
@@ -67,12 +88,13 @@ const [newProjectName, setNewProjectName] = useState("");
     } else {
       fetchTodos(undefined, status, from, to);
     }
-}, [selectedProject, filterType, fetchTodos]);
+  }, [selectedProject, filterType, fetchTodos]);
 
-  // Deep link: focus add input when ?add=1
   useEffect(() => {
     if (searchParams.get("add") === "1") {
-      const el = document.getElementById("new-todo-input") as HTMLInputElement | null;
+      const el = document.getElementById(
+        "new-todo-input"
+      ) as HTMLInputElement | null;
       el?.focus();
     }
   }, [searchParams]);
@@ -114,35 +136,63 @@ const [newProjectName, setNewProjectName] = useState("");
   ).length;
   const completedCount = items.filter((t) => t.status === "completed").length;
 
+  // Priority options for Select
+  const priorityOptions: SelectOption[] = [
+    { value: "high", label: "High", color: "var(--destructive)" },
+    { value: "medium", label: "Medium", color: "var(--warning)" },
+    { value: "low", label: "Low", color: "var(--muted)" },
+  ];
+
+  // Project options for Select
+  const projectOptions: SelectOption[] = [
+    { value: "none", label: "No project", icon: <InboxIcon size={15} className="text-(--muted)" /> },
+    ...projects.map((p) => ({
+      value: p.id,
+      label: p.name,
+      icon: <FolderKanban size={15} className="text-(--primary)" />,
+    })),
+  ];
+
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await addTodo({ projectId: selectedProject || undefined, title });
+    await addTodo({
+      projectId: (chosenProjectId || selectedProject) || undefined,
+      title,
+      priority,
+      dueDate: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
+    });
     setTitle("");
+    setPriority("medium");
+    setDueDate(undefined);
+    setChosenProjectId(null);
   };
 
   const startEdit = (todo: Todo) => {
     setEditingId(todo.id);
     setEditingTitle(todo.title);
+    setEditingPriority(todo.priority);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditingTitle("");
+    setEditingPriority(null);
   };
 
   const saveEdit = async () => {
-    if (!editingId || !editingTitle.trim()) return;
+    if (!editingId || !editingTitle.trim() || !editingPriority) return;
     await updateTodo({
       todoId: editingId,
       title: editingTitle,
       description: undefined,
       dueDate: undefined,
-      priority: undefined,
+      priority: editingPriority,
       tags: undefined,
     });
     setEditingId(null);
     setEditingTitle("");
+    setEditingPriority(null);
   };
 
   const createTodoProject = async () => {
@@ -157,6 +207,13 @@ const [newProjectName, setNewProjectName] = useState("");
 
   const sidebar = (
     <div className="space-y-6">
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="flex items-center justify-center gap-2 w-full rounded-lg bg-(--primary) px-4 py-2.5 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover)"
+      >
+        <Plus size={18} />
+        Add task
+      </button>
       {/* Search */}
       <div className="relative">
         <Search
@@ -207,9 +264,9 @@ const [newProjectName, setNewProjectName] = useState("");
                 : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
             }`}
           >
-            <span className="flex items-center gap-2">
+<span className="flex items-center gap-2">
               <InboxIcon size={16} />
-              Inbox
+              No Project
             </span>
             <span className="text-xs bg-(--secondary) px-1.5 py-0.5 rounded">
               {inboxCount}
@@ -365,7 +422,7 @@ const [newProjectName, setNewProjectName] = useState("");
               : filterType === "all"
               ? "All tasks"
               : filterType === "inbox"
-              ? "Inbox"
+              ? "No Project"
               : filterType === "today"
               ? "Tasks for today"
               : filterType === "upcoming"
@@ -374,28 +431,77 @@ const [newProjectName, setNewProjectName] = useState("");
           </p>
         </div>
 
-        <form onSubmit={onAdd} className="flex gap-3">
-          <div className="flex-1 relative">
-<input
+{/* Quick add composer */}
+        <form
+          onSubmit={onAdd}
+          className={`rounded-2xl border ${composerOpen ? "border-(--ring) shadow-lg" : "border-(--border)"} bg-(--card) p-4 shadow-sm transition-all`}
+        >
+          {/* Task title input */}
+          <div className="relative mb-4">
+            <input
               id="new-todo-input"
-              className="w-full rounded-lg border border-(--input-border) bg-(--input) pl-10 pr-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-colors focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+              className="w-full rounded-xl border-0 bg-(--secondary)/50 pl-11 pr-4 py-3.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:bg-(--secondary) focus:ring-2 focus:ring-(--ring)/30"
               placeholder="What needs to be done?"
               value={title}
+              onFocus={() => setComposerOpen(true)}
               onChange={(e) => setTitle(e.target.value)}
             />
             <CheckSquare
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-(--muted)"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-(--muted)"
               size={18}
             />
           </div>
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="flex items-center gap-2 rounded-lg bg-(--primary) px-5 py-3 text-sm font-medium text-(--primary-foreground) transition-colors hover:bg-(--primary-hover) disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">Add</span>
-          </button>
+
+          {/* Toolbar row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Due date picker */}
+            <DatePicker
+              value={dueDate}
+              onChange={setDueDate}
+              placeholder="Due date"
+            />
+
+            {/* Priority dropdown */}
+            <Select
+              value={priority}
+              onChange={(val) => setPriority((val as Todo["priority"]) || "medium")}
+              options={priorityOptions}
+              placeholder="Priority"
+              icon={<Flag size={15} />}
+            />
+
+            {/* Project dropdown */}
+            <Select
+              value={chosenProjectId || selectedProject || "none"}
+              onChange={(val) => setChosenProjectId(val === "none" ? null : val)}
+              options={projectOptions}
+              placeholder="Project"
+              icon={<FolderKanban size={15} />}
+            />
+
+            {/* Reminders (disabled) */}
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-2 rounded-lg border border-(--border) px-3 py-2 text-sm font-medium text-(--muted) opacity-50 cursor-not-allowed"
+            >
+              <Bell size={15} />
+              Reminders
+            </button>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Add button */}
+            <button
+              type="submit"
+              disabled={!title.trim()}
+              className="flex items-center gap-2 rounded-xl bg-(--primary) px-5 py-2.5 text-sm font-medium text-(--primary-foreground) transition-all hover:bg-(--primary-hover) hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={16} />
+              Add task
+            </button>
+          </div>
         </form>
 
         <div className="space-y-2">
@@ -441,36 +547,55 @@ const [newProjectName, setNewProjectName] = useState("");
 
                   <div className="flex-1 min-w-0">
                     {editingId === todo.id ? (
-                      <input
-                        className="w-full rounded-md border border-(--input-border) bg-(--input) px-2 py-1 text-sm text-(--foreground) outline-none focus:border-(--ring)"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        autoFocus
-                      />
+                      <>
+                        <input
+                          className="w-full rounded-md border border-(--input-border) bg-(--input) px-2 py-1 text-sm text-(--foreground) outline-none focus:border-(--ring)"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          autoFocus
+                        />
+                        <div className="mt-2">
+                          <select
+                            value={editingPriority ?? todo.priority}
+                            onChange={(e) =>
+                              setEditingPriority(
+                                e.target.value as Todo["priority"]
+                              )
+                            }
+                            className="w-fit rounded-md border border-(--input-border) bg-(--input) px-2 py-1 text-xs text-(--foreground) outline-none focus:border-(--ring)"
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+                      </>
                     ) : (
-                      <p
-                        className={`text-sm font-medium ${
-                          todo.status === "completed"
-                            ? "text-(--muted) line-through"
-                            : "text-(--foreground)"
-                        }`}
-                      >
-                        {todo.title}
-                      </p>
+                      <>
+                        <p
+                          className={`text-sm font-medium ${
+                            todo.status === "completed"
+                              ? "text-(--muted) line-through"
+                              : "text-(--foreground)"
+                          }`}
+                        >
+                          {todo.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              todo.priority === "high"
+                                ? "bg-(--destructive)/10 text-(--destructive)"
+                                : todo.priority === "medium"
+                                ? "bg-(--warning)/10 text-(--warning)"
+                                : "bg-(--secondary) text-(--muted)"
+                            }`}
+                          >
+                            {todo.priority}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          todo.priority === "high"
-                            ? "bg-(--destructive)/10 text-(--destructive)"
-                            : todo.priority === "medium"
-                            ? "bg-(--warning)/10 text-(--warning)"
-                            : "bg-(--secondary) text-(--muted)"
-                        }`}
-                      >
-                        {todo.priority}
-                      </span>
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -534,6 +659,83 @@ const [newProjectName, setNewProjectName] = useState("");
           )}
         </div>
       </div>
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-(--border) bg-(--card) shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between p-5 border-b border-(--border)">
+              <h2 className="text-lg font-semibold text-(--foreground)">Add task</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-1.5 rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-5">
+              <div>
+                <input
+                  value={mTitle}
+                  onChange={(e) => setMTitle(e.target.value)}
+                  placeholder="What needs to be done?"
+                  autoFocus
+                  className="w-full rounded-xl border-0 bg-(--secondary)/50 px-4 py-3.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:bg-(--secondary) focus:ring-2 focus:ring-(--ring)/30"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <DatePicker
+                  value={mDueDate}
+                  onChange={setMDueDate}
+                  placeholder="Due date"
+                />
+                <Select
+                  value={mPriority}
+                  onChange={(val) => setMPriority((val as Todo["priority"]) || "medium")}
+                  options={priorityOptions}
+                  placeholder="Priority"
+                  icon={<Flag size={15} />}
+                />
+                <Select
+                  value={mProjectId || selectedProject || "none"}
+                  onChange={(val) => setMProjectId(val === "none" ? null : val)}
+                  options={projectOptions}
+                  placeholder="Project"
+                  icon={<FolderKanban size={15} />}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-(--border)">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="rounded-xl border border-(--border) px-5 py-2.5 text-sm font-medium hover:bg-(--card-hover) transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!mTitle.trim()) return;
+                  await addTodo({
+                    projectId: (mProjectId || selectedProject) || undefined,
+                    title: mTitle,
+                    dueDate: mDueDate ? format(mDueDate, "yyyy-MM-dd") : undefined,
+                    priority: mPriority,
+                  });
+                  setMTitle("");
+                  setMDueDate(undefined);
+                  setMPriority("medium");
+                  setMProjectId(null);
+                  setShowAddModal(false);
+                }}
+                disabled={!mTitle.trim()}
+                className="rounded-xl bg-(--primary) px-5 py-2.5 text-sm font-medium text-(--primary-foreground) hover:bg-(--primary-hover) transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
