@@ -36,7 +36,10 @@ export function Select({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -59,9 +62,16 @@ export function Select({
       >
         <span className="flex items-center gap-2 truncate">
           {icon || selectedOption?.icon}
-          <span className="truncate">{selectedOption?.label || placeholder}</span>
+          <span className="truncate">
+            {selectedOption?.label || placeholder}
+          </span>
         </span>
-        <ChevronDown size={14} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={14}
+          className={`shrink-0 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {open && (
@@ -100,7 +110,9 @@ export function Select({
                     style={{ backgroundColor: option.color }}
                   />
                 )}
-                <span className="truncate flex-1 text-left">{option.label}</span>
+                <span className="truncate flex-1 text-left">
+                  {option.label}
+                </span>
                 {value === option.value && (
                   <Check size={14} className="shrink-0 text-(--primary)" />
                 )}

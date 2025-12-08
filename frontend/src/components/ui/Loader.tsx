@@ -13,4 +13,3 @@ export const Loader = ({ label, size = 20 }: LoaderProps) => (
     {label ? <span className="text-sm text-(--muted)">{label}</span> : null}
   </div>
 );
-

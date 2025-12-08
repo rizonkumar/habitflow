@@ -77,7 +77,9 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (projects.length && !projectId) {
-      setProjectId(projects[0].id);
+      setTimeout(() => {
+        setProjectId(projects[0].id);
+      }, 0);
     }
   }, [projects, projectId]);
 
@@ -86,7 +88,9 @@ export default function BoardPage() {
       fetchBoard(projectId);
       fetchCurrentUserRole(projectId);
       fetchMembers(projectId);
-      setShowProjectSidebar(true);
+      setTimeout(() => {
+        setShowProjectSidebar(true);
+      }, 0);
     }
   }, [projectId, fetchBoard, fetchCurrentUserRole, fetchMembers]);
 
@@ -163,7 +167,9 @@ export default function BoardPage() {
   const getInitials = (name: string) => {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
   };
 
   const selectedProject = projects.find((p) => p.id === projectId);

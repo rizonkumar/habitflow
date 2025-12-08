@@ -18,7 +18,8 @@ export const useAuthGuard = () => {
     ensure().finally(() => setChecking(false));
   }, [loadCurrentUser, router]);
 
-  const isAuthenticated = Boolean(token && (user || status === "authenticated"));
+  const isAuthenticated = Boolean(
+    token && (user || status === "authenticated")
+  );
   return { isAuthenticated, checking };
 };
-

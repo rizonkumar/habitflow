@@ -138,7 +138,9 @@ export default function DashboardPage() {
               <Activity size={14} className="text-(--success)" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-bold text-(--foreground)">{logsThisWeek}</p>
+          <p className="mt-2 text-2xl font-bold text-(--foreground)">
+            {logsThisWeek}
+          </p>
           <p className="text-xs text-(--muted)">logs this week</p>
         </div>
       </div>
@@ -153,37 +155,55 @@ export default function DashboardPage() {
           currentMonth={calendarMonth}
           onMonthChange={setCalendarMonth}
         />
-        
+
         {/* Quick Tips */}
         <div className="rounded-xl border border-(--border) bg-(--card) p-4 sm:p-5">
-          <h3 className="text-base font-semibold text-(--foreground) mb-4">Keep Your Streak Going</h3>
+          <h3 className="text-base font-semibold text-(--foreground) mb-4">
+            Keep Your Streak Going
+          </h3>
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
               <span className="text-xl">💧</span>
               <div>
-                <p className="text-sm font-medium text-(--foreground)">Log your water intake</p>
-                <p className="text-xs text-(--muted)">Stay hydrated throughout the day</p>
+                <p className="text-sm font-medium text-(--foreground)">
+                  Log your water intake
+                </p>
+                <p className="text-xs text-(--muted)">
+                  Stay hydrated throughout the day
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
               <span className="text-xl">🏋️</span>
               <div>
-                <p className="text-sm font-medium text-(--foreground)">Track your workouts</p>
-                <p className="text-xs text-(--muted)">Even a short walk counts!</p>
+                <p className="text-sm font-medium text-(--foreground)">
+                  Track your workouts
+                </p>
+                <p className="text-xs text-(--muted)">
+                  Even a short walk counts!
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
               <span className="text-xl">😴</span>
               <div>
-                <p className="text-sm font-medium text-(--foreground)">Log your sleep</p>
-                <p className="text-xs text-(--muted)">Aim for 7-9 hours per night</p>
+                <p className="text-sm font-medium text-(--foreground)">
+                  Log your sleep
+                </p>
+                <p className="text-xs text-(--muted)">
+                  Aim for 7-9 hours per night
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
               <span className="text-xl">✅</span>
               <div>
-                <p className="text-sm font-medium text-(--foreground)">Complete tasks</p>
-                <p className="text-xs text-(--muted)">Each completed task adds to your streak</p>
+                <p className="text-sm font-medium text-(--foreground)">
+                  Complete tasks
+                </p>
+                <p className="text-xs text-(--muted)">
+                  Each completed task adds to your streak
+                </p>
               </div>
             </div>
           </div>
@@ -275,25 +295,46 @@ export default function DashboardPage() {
             <Target size={18} className="text-(--foreground)" />
           </div>
           <div className="flex-1">
-<h3 className="font-semibold text-(--foreground)">Get Started</h3>
+            <h3 className="font-semibold text-(--foreground)">Get Started</h3>
             <p className="mt-1 text-sm text-(--muted)">
               Start by adding a task or logging a habit. Projects are optional
               and help when you want kanban boards.
             </p>
           </div>
         </div>
-<div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <Link href="/todos?add=1" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">1</div>
-            <span className="text-sm text-(--foreground)">Add your first task</span>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <Link
+            href="/todos?add=1"
+            className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors"
+          >
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              1
+            </div>
+            <span className="text-sm text-(--foreground)">
+              Add your first task
+            </span>
           </Link>
-          <Link href="/health?add=1&period=today" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">2</div>
-            <span className="text-sm text-(--foreground)">Log a habit today</span>
+          <Link
+            href="/health?add=1&period=today"
+            className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors"
+          >
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              2
+            </div>
+            <span className="text-sm text-(--foreground)">
+              Log a habit today
+            </span>
           </Link>
-          <Link href="/projects?new=1&type=jira" className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">3</div>
-            <span className="text-sm text-(--foreground)">Optional: Create a project (boards)</span>
+          <Link
+            href="/projects?new=1&type=jira"
+            className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3 hover:bg-(--card-hover) transition-colors"
+          >
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-(--foreground) text-(--background) text-xs font-bold">
+              3
+            </div>
+            <span className="text-sm text-(--foreground)">
+              Optional: Create a project (boards)
+            </span>
           </Link>
         </div>
       </div>

@@ -10,7 +10,6 @@ import {
   Sun,
   Menu,
   X,
-  FolderKanban,
   CheckSquare,
   Layout,
   Heart,
@@ -35,7 +34,8 @@ export const AppHeader = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

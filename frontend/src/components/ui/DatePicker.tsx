@@ -2,8 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
-import { format, addDays, nextSaturday, startOfWeek, addWeeks, isSameDay } from "date-fns";
-import { Calendar, Sun, ArrowRight, CalendarDays, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  format,
+  addDays,
+  nextSaturday,
+  startOfWeek,
+  addWeeks,
+  isSameDay,
+} from "date-fns";
+import {
+  Calendar,
+  Sun,
+  ArrowRight,
+  CalendarDays,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface DatePickerProps {
   value?: Date | string;
@@ -34,15 +49,26 @@ const presets = [
   },
 ];
 
-export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePickerProps) {
+export function DatePicker({
+  value,
+  onChange,
+  placeholder = "Due date",
+}: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const dateValue = value ? (typeof value === "string" ? new Date(value + "T00:00:00") : value) : undefined;
+
+  const dateValue = value
+    ? typeof value === "string"
+      ? new Date(value + "T00:00:00")
+      : value
+    : undefined;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -88,7 +114,6 @@ export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePi
 
       {open && (
         <div className="absolute left-0 top-full z-50 mt-2 w-[280px] rounded-xl border border-(--border) bg-(--card) shadow-xl animate-in">
-          {/* Presets */}
           <div className="border-b border-(--border) p-3">
             <div className="grid grid-cols-2 gap-1.5">
               {presets.map((preset) => {
@@ -106,7 +131,12 @@ export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePi
                         : "text-(--foreground) hover:bg-(--card-hover)"
                     }`}
                   >
-                    <PresetIcon size={15} className={isActive ? "text-(--primary)" : "text-(--muted)"} />
+                    <PresetIcon
+                      size={15}
+                      className={
+                        isActive ? "text-(--primary)" : "text-(--muted)"
+                      }
+                    />
                     {preset.label}
                   </button>
                 );
@@ -114,7 +144,6 @@ export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePi
             </div>
           </div>
 
-          {/* Calendar */}
           <div className="p-3">
             <DayPicker
               mode="single"
@@ -123,8 +152,12 @@ export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePi
               showOutsideDays
               fixedWeeks
               components={{
-                Chevron: ({ orientation }) => 
-                  orientation === "left" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />
+                Chevron: ({ orientation }) =>
+                  orientation === "left" ? (
+                    <ChevronLeft size={16} />
+                  ) : (
+                    <ChevronRight size={16} />
+                  ),
               }}
               classNames={{
                 root: "w-full",
@@ -133,23 +166,28 @@ export function DatePicker({ value, onChange, placeholder = "Due date" }: DatePi
                 month_caption: "flex justify-center items-center relative h-8",
                 caption_label: "text-sm font-semibold text-(--foreground)",
                 nav: "absolute inset-x-0 top-0 flex items-center justify-between",
-                button_previous: "h-8 w-8 flex items-center justify-center rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors",
-                button_next: "h-8 w-8 flex items-center justify-center rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors",
+                button_previous:
+                  "h-8 w-8 flex items-center justify-center rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors",
+                button_next:
+                  "h-8 w-8 flex items-center justify-center rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors",
                 month_grid: "w-full border-collapse",
                 weekdays: "flex w-full",
-                weekday: "flex-1 text-center text-(--muted) text-xs font-medium py-2",
+                weekday:
+                  "flex-1 text-center text-(--muted) text-xs font-medium py-2",
                 week: "flex w-full",
                 day: "flex-1 flex items-center justify-center p-0.5",
-                day_button: "w-full aspect-square rounded-lg text-sm transition-colors hover:bg-(--card-hover) flex items-center justify-center",
-                selected: "[&>button]:bg-(--primary) [&>button]:text-(--primary-foreground) [&>button]:hover:bg-(--primary) [&>button]:font-medium",
+                day_button:
+                  "w-full aspect-square rounded-lg text-sm transition-colors hover:bg-(--card-hover) flex items-center justify-center",
+                selected:
+                  "[&>button]:bg-(--primary) [&>button]:text-(--primary-foreground) [&>button]:hover:bg-(--primary) [&>button]:font-medium",
                 today: "[&>button]:bg-(--secondary) [&>button]:font-semibold",
                 outside: "[&>button]:text-(--muted) [&>button]:opacity-40",
-                disabled: "[&>button]:text-(--muted) [&>button]:opacity-30 [&>button]:cursor-not-allowed",
+                disabled:
+                  "[&>button]:text-(--muted) [&>button]:opacity-30 [&>button]:cursor-not-allowed",
               }}
             />
           </div>
 
-          {/* Clear button */}
           {dateValue && (
             <div className="border-t border-(--border) p-2">
               <button
