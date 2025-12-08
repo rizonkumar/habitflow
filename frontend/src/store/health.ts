@@ -17,14 +17,14 @@ type HealthState = {
     type: HealthLog["type"];
     amount?: number;
     unit?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     date?: string;
   }) => Promise<HealthLog>;
   updateLog: (payload: {
     logId: string;
     amount?: number;
     unit?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     date?: string;
   }) => Promise<HealthLog>;
   deleteLog: (logId: string) => Promise<void>;
