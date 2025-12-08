@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { useProjectStore } from "../../../store/projects";
 import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
@@ -34,6 +34,33 @@ import {
 
 type FilterType = "all" | "inbox" | "today" | "upcoming" | "completed";
 type ViewMode = "list" | "grid";
+
+// Helper to safely parse and format dates
+const formatDueDate = (dateStr: string | undefined): string | null => {
+  if (!dateStr) return null;
+  try {
+    // Handle ISO strings and date-only strings
+    const date = dateStr.includes("T")
+      ? parseISO(dateStr)
+      : new Date(dateStr + "T00:00:00");
+    if (!isValid(date)) return null;
+    return format(date, "MMM d");
+  } catch {
+    return null;
+  }
+};
+
+const parseDueDate = (dateStr: string | undefined): Date | null => {
+  if (!dateStr) return null;
+  try {
+    const date = dateStr.includes("T")
+      ? parseISO(dateStr)
+      : new Date(dateStr + "T00:00:00");
+    return isValid(date) ? date : null;
+  } catch {
+    return null;
+  }
+};
 
 export default function TodosPage() {
   const { projects, fetchProjects, createProject } = useProjectStore();
@@ -118,9 +145,11 @@ export default function TodosPage() {
       result = result.filter((t) => t.status === "todo");
     } else if (filterType === "upcoming") {
       const now = new Date();
-      result = result.filter(
-        (t) => t.status === "todo" && t.dueDate && new Date(t.dueDate) > now
-      );
+      result = result.filter((t) => {
+        if (t.status !== "todo" || !t.dueDate) return false;
+        const parsed = parseDueDate(t.dueDate);
+        return parsed && parsed > now;
+      });
     } else if (filterType === "all" && !selectedProject) {
       result = result.filter((t) => t.status === "todo");
     }
@@ -140,7 +169,6 @@ export default function TodosPage() {
   ).length;
   const completedCount = items.filter((t) => t.status === "completed").length;
 
-  // Priority options for Select
   const priorityOptions: SelectOption[] = [
     { value: "high", label: "High", color: "var(--destructive)" },
     { value: "medium", label: "Medium", color: "var(--warning)" },
@@ -679,13 +707,10 @@ export default function TodosPage() {
                               ></span>
                               {todo.priority}
                             </span>
-                            {todo.dueDate && (
+                            {formatDueDate(todo.dueDate) && (
                               <span className="inline-flex items-center gap-1.5 text-xs text-(--muted) px-2.5 py-1 rounded-full bg-(--secondary)">
                                 <Clock size={12} />
-                                {format(
-                                  new Date(todo.dueDate + "T00:00:00"),
-                                  "MMM d"
-                                )}
+                                {formatDueDate(todo.dueDate)}
                               </span>
                             )}
                             {todo.projectId && (
