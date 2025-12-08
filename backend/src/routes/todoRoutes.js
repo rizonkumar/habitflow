@@ -15,13 +15,18 @@ const router = Router();
 
 const idParam = z.object({ todoId: z.string().min(1) });
 
+const prioritySchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.toLowerCase() : value),
+  z.enum(["low", "medium", "high"])
+);
+
 const createSchema = z.object({
   body: z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     projectId: z.string().min(1).optional(),
     dueDate: z.string().datetime().optional(),
-    priority: z.enum(["low", "medium", "high"]).optional(),
+    priority: prioritySchema.optional(),
     tags: z.array(z.string()).optional(),
   }),
 });
@@ -47,7 +52,7 @@ const updateSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     dueDate: z.string().datetime().optional(),
-    priority: z.enum(["low", "medium", "high"]).optional(),
+    priority: prioritySchema.optional(),
     tags: z.array(z.string()).optional(),
   }),
 });
