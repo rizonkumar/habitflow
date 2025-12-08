@@ -77,9 +77,7 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (projects.length && !projectId) {
-      setTimeout(() => {
-        setProjectId(projects[0].id);
-      }, 0);
+      setProjectId(projects[0].id);
     }
   }, [projects, projectId]);
 
@@ -88,13 +86,10 @@ export default function BoardPage() {
       fetchBoard(projectId);
       fetchCurrentUserRole(projectId);
       fetchMembers(projectId);
-      setTimeout(() => {
-        setShowProjectSidebar(true);
-      }, 0);
+      setShowProjectSidebar(true);
     }
   }, [projectId, fetchBoard, fetchCurrentUserRole, fetchMembers]);
 
-  // Filter tasks by selected members
   const filteredTasks =
     filterMemberIds.length > 0
       ? tasks.filter((t) => {
@@ -344,29 +339,31 @@ export default function BoardPage() {
         <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
           Actions
         </h3>
-        {columns.length === 0 && projectId && canEdit && (
+        <div className="space-y-2">
+          {columns.length === 0 && projectId && canEdit && (
+            <button
+              onClick={handleInitBoard}
+              className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors"
+            >
+              <Columns size={16} />
+              Initialize Board
+            </button>
+          )}
           <button
-            onClick={handleInitBoard}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--primary) bg-(--primary)/10 hover:bg-(--primary)/20 transition-colors"
+            onClick={() => projectId && fetchBoard(projectId)}
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
           >
-            <Columns size={16} />
-            Initialize Board
+            <RefreshCw size={16} />
+            Refresh
           </button>
-        )}
-        <button
-          onClick={() => projectId && fetchBoard(projectId)}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-        >
-          <RefreshCw size={16} />
-          Refresh
-        </button>
-        <button
-          onClick={() => router.push(`/board/${projectId}/settings`)}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
-        >
-          <Settings size={16} />
-          {isAdmin ? "Manage Members" : "View Members"}
-        </button>
+          <button
+            onClick={() => router.push(`/board/${projectId}/settings`)}
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
+          >
+            <Settings size={16} />
+            {isAdmin ? "Manage Members" : "View Members"}
+          </button>
+        </div>
       </div>
     </div>
   );

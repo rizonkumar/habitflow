@@ -58,15 +58,11 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
-      setTimeout(() => {
-        setShowForm(true);
-      }, 0);
+      setShowForm(true);
     }
     const t = searchParams.get("type") as Project["type"] | null;
     if (t && ["mixed", "todo", "jira", "health"].includes(t)) {
-      setTimeout(() => {
-        setForm((f) => ({ ...f, type: t }));
-      }, 0);
+      setForm((f) => ({ ...f, type: t }));
     }
   }, [searchParams]);
 
