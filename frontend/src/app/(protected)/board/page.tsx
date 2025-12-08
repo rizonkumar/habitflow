@@ -76,12 +76,6 @@ export default function BoardPage() {
   }, [fetchProjects]);
 
   useEffect(() => {
-    if (projects.length && !projectId) {
-      setProjectId(projects[0].id);
-    }
-  }, [projects, projectId]);
-
-  useEffect(() => {
     if (projectId) {
       fetchBoard(projectId);
       fetchCurrentUserRole(projectId);
@@ -241,7 +235,10 @@ export default function BoardPage() {
   const projectSidebar = (
     <div className="space-y-6">
       <button
-        onClick={() => setShowProjectSidebar(false)}
+        onClick={() => {
+          setProjectId("");
+          setShowProjectSidebar(false);
+        }}
         className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors"
       >
         <ArrowLeft size={16} />
@@ -612,13 +609,15 @@ export default function BoardPage() {
         ) : (
           <div className="rounded-xl border border-(--border) border-dashed bg-(--card) p-12 text-center">
             <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-xl bg-(--accent)/10 text-(--accent)">
-              <Layout size={24} />
+              {projectId ? <Layout size={24} /> : <FolderKanban size={24} />}
             </div>
             <h3 className="mt-4 text-base font-semibold text-(--foreground)">
-              No board columns
+              {projectId ? "No board columns" : "No project selected"}
             </h3>
             <p className="mt-1 text-sm text-(--muted)">
-              Initialize the board to create default columns.
+              {projectId
+                ? "Initialize the board to create default columns."
+                : "Select a project from the sidebar to view its board."}
             </p>
             {projectId && (
               <button
