@@ -54,10 +54,10 @@ export function Select({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all hover:bg-(--card-hover) min-w-[120px] justify-between ${
+        className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all min-w-[120px] justify-between ${
           selectedOption
             ? "border-(--primary) bg-(--primary)/5 text-(--primary)"
-            : "border-(--border) text-(--muted-foreground) hover:text-(--foreground)"
+            : "border-(--border) text-(--muted-foreground) hover:bg-(--card-hover) hover:text-(--foreground)"
         }`}
       >
         <span className="flex items-center gap-2 truncate">
@@ -75,8 +75,8 @@ export function Select({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 min-w-full w-max max-w-[240px] rounded-xl border border-(--border) bg-(--card) p-1.5 shadow-xl animate-in">
-          <div className="max-h-[240px] overflow-y-auto">
+        <div className="absolute left-0 top-full z-50 mt-2 min-w-full w-max max-w-[240px] rounded-xl border border-(--border) bg-(--card) p-2 shadow-xl animate-in">
+          <div className="max-h-[240px] overflow-y-auto space-y-1">
             {allowClear && value && (
               <button
                 type="button"
@@ -84,7 +84,7 @@ export function Select({
                   onChange(null);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-(--muted-foreground) hover:bg-(--card-hover) hover:text-(--foreground) transition-colors"
               >
                 Clear selection
               </button>
