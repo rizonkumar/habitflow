@@ -18,6 +18,51 @@ import {
 import { useTheme } from "next-themes";
 import { Logo } from "../../../components/brand/Logo";
 
+function SignupSkeleton() {
+  return (
+    <div className="min-h-screen bg-(--background) flex flex-col animate-pulse">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+        <div className="h-4 w-12 rounded bg-(--secondary)" />
+        <div className="w-9 h-9 rounded-lg bg-(--secondary)" />
+      </div>
+
+      <div className="flex justify-center pt-4">
+        <div className="h-8 w-28 rounded bg-(--secondary)" />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center pb-16">
+        <div className="w-full max-w-md rounded-xl border border-(--border) bg-(--card) p-6 sm:p-8 shadow-sm">
+          <div className="mb-6 text-center">
+            <div className="h-8 w-36 mx-auto mb-3 rounded bg-(--secondary)" />
+            <div className="h-4 w-64 mx-auto rounded bg-(--secondary)" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <div className="h-4 w-12 rounded bg-(--secondary)" />
+              <div className="h-11 w-full rounded-lg bg-(--secondary)" />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="h-4 w-12 rounded bg-(--secondary)" />
+              <div className="h-11 w-full rounded-lg bg-(--secondary)" />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="h-4 w-16 rounded bg-(--secondary)" />
+              <div className="h-11 w-full rounded-lg bg-(--secondary)" />
+            </div>
+
+            <div className="h-11 w-full rounded-lg bg-(--secondary)" />
+
+            <div className="h-4 w-44 mx-auto rounded bg-(--secondary)" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const { signup, status, error } = useAuthStore();
@@ -44,6 +89,10 @@ export default function SignupPage() {
       setLocalError(err instanceof Error ? err.message : "Signup failed");
     }
   };
+
+  if (!mounted) {
+    return <SignupSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-(--background) flex flex-col">
