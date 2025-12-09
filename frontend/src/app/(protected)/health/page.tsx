@@ -10,6 +10,7 @@ import {
   SidebarSection,
   SidebarButton,
 } from "../../../components/app/SidebarItem";
+import { Loader } from "../../../components/ui/Loader";
 import {
   Droplets,
   Dumbbell,
@@ -90,7 +91,7 @@ const typeConfig: Record<
 };
 
 export default function HealthPage() {
-  const { logs, fetchLogs, createLog, deleteLog } = useHealthStore();
+  const { logs, fetchLogs, createLog, deleteLog, loading } = useHealthStore();
   const [type, setType] = useState<HealthLog["type"]>("water");
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [unit, setUnit] = useState("");
@@ -98,9 +99,10 @@ export default function HealthPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const searchParams = useSearchParams();
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
-    fetchLogs();
+    fetchLogs().finally(() => setInitialLoad(false));
   }, [fetchLogs]);
 
   useEffect(() => {
@@ -181,6 +183,17 @@ export default function HealthPage() {
       typeCounts={typeCounts}
     />
   );
+
+  if (initialLoad && loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
+        <div className="flex flex-col items-center gap-4">
+          <Loader size={32} />
+          <p className="text-sm text-(--muted)">Loading Health...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppShell sidebar={sidebar}>
