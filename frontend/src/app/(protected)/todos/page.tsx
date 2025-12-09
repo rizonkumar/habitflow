@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "../../../components/ui/Skeleton";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import { Select, type SelectOption } from "../../../components/ui/Select";
+import { Loader } from "../../../components/ui/Loader";
 import {
   Plus,
   CheckSquare,
@@ -97,6 +98,8 @@ export default function TodosPage() {
   const [mDueDate, setMDueDate] = useState<Date | undefined>(undefined);
   const [mPriority, setMPriority] = useState<Todo["priority"]>("medium");
   const [mProjectId, setMProjectId] = useState<string | null>(null);
+  
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     fetchProjects("todo");
@@ -122,9 +125,9 @@ export default function TodosPage() {
     }
 
     if (selectedProject) {
-      fetchTodos(selectedProject, status, from, to);
+      fetchTodos(selectedProject, status, from, to).finally(() => setInitialLoad(false));
     } else {
-      fetchTodos(undefined, status, from, to);
+      fetchTodos(undefined, status, from, to).finally(() => setInitialLoad(false));
     }
   }, [selectedProject, filterType, fetchTodos]);
 
@@ -291,6 +294,17 @@ export default function TodosPage() {
     createTodoProject={createTodoProject}
     projects={projects}
   />;
+
+  if (initialLoad && loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
+        <div className="flex flex-col items-center gap-4">
+          <Loader size={32} />
+          <p className="text-sm text-(--muted)">Loading Todos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppShell sidebar={sidebar}>

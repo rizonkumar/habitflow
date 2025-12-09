@@ -17,6 +17,7 @@ import {
 } from "../../../components/app/SidebarItem";
 import { TaskModal } from "../../../components/board/TaskModal";
 import { MemberFilter } from "../../../components/board/MemberFilter";
+import { Loader } from "../../../components/ui/Loader";
 import {
   Plus,
   Layout,
@@ -156,7 +157,7 @@ function NewProjectModal({
 
 export default function BoardPage() {
   const router = useRouter();
-  const { projects, fetchProjects, createProject } = useProjectStore();
+  const { projects, fetchProjects, createProject, loading: projectsLoading } = useProjectStore();
   const {
     columns,
     tasks,
@@ -179,12 +180,13 @@ export default function BoardPage() {
   const [selectedTask, setSelectedTask] = useState<BoardTask | null>(null);
   const [filterMemberIds, setFilterMemberIds] = useState<string[]>([]);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const canEdit = currentUserRole === "admin" || currentUserRole === "editor";
   const isAdmin = currentUserRole === "admin";
 
   useEffect(() => {
-    fetchProjects("jira");
+    fetchProjects("jira").finally(() => setInitialLoad(false));
   }, [fetchProjects]);
 
   useEffect(() => {
@@ -355,6 +357,17 @@ export default function BoardPage() {
 
   const sidebar =
     showProjectSidebar && projectId ? projectSidebar : mainSidebar;
+
+  if (initialLoad && projectsLoading) {
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
+        <div className="flex flex-col items-center gap-4">
+          <Loader size={32} />
+          <p className="text-sm text-(--muted)">Loading Board...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppShell sidebar={sidebar}>
