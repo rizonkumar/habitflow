@@ -17,7 +17,6 @@ import {
 import { Skeleton } from "../../../components/ui/Skeleton";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import { Select, type SelectOption } from "../../../components/ui/Select";
-import { Loader } from "../../../components/ui/Loader";
 import {
   Plus,
   CheckSquare,
@@ -69,6 +68,83 @@ const parseDueDate = (dateStr: string | undefined): Date | null => {
     return null;
   }
 };
+
+function TodosLoadingSkeleton() {
+  return (
+    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-xl" />
+          <div>
+            <Skeleton className="h-7 w-24 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-28 rounded-xl" />
+      </div>
+
+      <div className="rounded-2xl border-2 border-(--border) bg-(--card) p-4 sm:p-5">
+        <Skeleton className="h-12 w-full rounded-xl mb-4" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Skeleton className="h-10 w-28 rounded-xl" />
+          <Skeleton className="h-10 w-24 rounded-xl" />
+          <Skeleton className="h-10 w-28 rounded-xl" />
+          <div className="flex-1" />
+          <Skeleton className="h-10 w-28 rounded-xl" />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border-2 border-(--border) bg-(--card) p-4"
+          >
+            <div className="flex items-start gap-3">
+              <Skeleton className="w-6 h-6 rounded-full mt-0.5" />
+              <div className="flex-1">
+                <Skeleton className="h-5 w-3/4 mb-3" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+              </div>
+              <Skeleton className="w-8 h-8 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TodosSidebarSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-full rounded-xl" />
+      <Skeleton className="h-10 w-full rounded-xl" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-12 mb-3" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="w-5 h-5 rounded" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="w-6 h-5 rounded-full" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20 mb-3" />
+        {[1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="w-5 h-5 rounded" />
+            <Skeleton className="h-4 flex-1" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function TodosPage() {
   const { projects, fetchProjects, createProject } = useProjectStore();
@@ -297,12 +373,9 @@ export default function TodosPage() {
 
   if (initialLoad && loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size={32} />
-          <p className="text-sm text-(--muted)">Loading Todos...</p>
-        </div>
-      </div>
+      <AppShell sidebar={<TodosSidebarSkeleton />}>
+        <TodosLoadingSkeleton />
+      </AppShell>
     );
   }
 

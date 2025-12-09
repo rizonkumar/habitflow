@@ -10,7 +10,7 @@ import {
   SidebarSection,
   SidebarButton,
 } from "../../../components/app/SidebarItem";
-import { Loader } from "../../../components/ui/Loader";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import {
   Droplets,
   Dumbbell,
@@ -30,6 +30,92 @@ import {
 
 type TimeFilter = "today" | "week" | "month" | "all";
 type TypeFilter = HealthLog["type"] | "all";
+
+function HealthLoadingSkeleton() {
+  return (
+    <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-xl" />
+          <div>
+            <Skeleton className="h-7 w-20 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-32 rounded-xl" />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border-2 border-(--border) bg-(--card) p-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="w-10 h-10 rounded-xl" />
+              <Skeleton className="w-8 h-6 rounded-lg" />
+            </div>
+            <Skeleton className="h-8 w-12 mb-1" />
+            <Skeleton className="h-3 w-14" />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Skeleton className="w-8 h-8 rounded-lg" />
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="w-12 h-5 rounded-full" />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border-2 border-(--border) bg-(--card) p-4"
+            >
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-12 h-12 rounded-xl" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-3 w-24 mb-1" />
+                  <Skeleton className="h-2 w-12" />
+                </div>
+                <Skeleton className="w-9 h-9 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HealthSidebarSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-full rounded-xl" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20 mb-3" />
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="w-5 h-5 rounded" />
+            <Skeleton className="h-4 flex-1" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24 mb-3" />
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="w-5 h-5 rounded" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="w-6 h-5 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const typeConfig: Record<
   HealthLog["type"],
@@ -186,12 +272,9 @@ export default function HealthPage() {
 
   if (initialLoad && loading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size={32} />
-          <p className="text-sm text-(--muted)">Loading Health...</p>
-        </div>
-      </div>
+      <AppShell sidebar={<HealthSidebarSkeleton />}>
+        <HealthLoadingSkeleton />
+      </AppShell>
     );
   }
 

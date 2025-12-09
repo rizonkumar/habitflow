@@ -20,12 +20,113 @@ import { useHealthStore } from "../../../store/health";
 import { Skeleton } from "../../../components/ui/Skeleton";
 import { StreakCalendar } from "../../../components/ui/StreakCalendar";
 
+function DashboardLoadingSkeleton() {
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <Skeleton className="h-5 w-40" />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-xl border border-(--border) bg-(--card) p-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3 w-12" />
+              <Skeleton className="w-7 h-7 rounded-lg" />
+            </div>
+            <Skeleton className="h-8 w-8 mt-2 mb-1" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="h-5 w-32" />
+            <div className="flex gap-2">
+              <Skeleton className="w-8 h-8 rounded-lg" />
+              <Skeleton className="w-8 h-8 rounded-lg" />
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {[...Array(35)].map((_, i) => (
+              <Skeleton key={i} className="aspect-square w-full rounded-md" />
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-(--border) bg-(--card) p-4 sm:p-5">
+          <Skeleton className="h-5 w-40 mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-(--secondary)">
+                <Skeleton className="w-6 h-6" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border border-(--border) bg-(--card) p-5">
+            <div className="flex items-start justify-between">
+              <Skeleton className="w-11 h-11 rounded-xl" />
+              <Skeleton className="w-5 h-5" />
+            </div>
+            <Skeleton className="h-6 w-24 mt-4 mb-2" />
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-3/4" />
+            <div className="flex items-center gap-2 mt-4">
+              <Skeleton className="w-3 h-3" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-(--border) bg-(--card) p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <Skeleton className="w-9 h-9 rounded-lg" />
+          <div className="flex-1">
+            <Skeleton className="h-5 w-28 mb-2" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg bg-(--secondary) p-3">
+              <Skeleton className="w-6 h-6 rounded-full" />
+              <Skeleton className="h-4 flex-1" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const firstName = user?.name?.split(" ")[0] || "there";
   const { streak, fetchStreak, loading: streakLoading } = useStreakStore();
-  const { logs, fetchLogs } = useHealthStore();
+  const { logs, fetchLogs, loading: healthLoading } = useHealthStore();
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const currentHour = new Date().getHours();
   const greeting =
@@ -36,8 +137,7 @@ export default function DashboardPage() {
       : "Good evening";
 
   useEffect(() => {
-    fetchStreak();
-    fetchLogs(); // Fetch all logs to get activity dates
+    Promise.all([fetchStreak(), fetchLogs()]).finally(() => setInitialLoad(false));
   }, [fetchStreak, fetchLogs]);
 
   // Extract unique active dates from health logs
@@ -56,6 +156,10 @@ export default function DashboardPage() {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     return logs.filter((l) => new Date(l.date) >= weekAgo).length;
   }, [logs]);
+
+  if (initialLoad && (streakLoading || healthLoading)) {
+    return <DashboardLoadingSkeleton />;
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
