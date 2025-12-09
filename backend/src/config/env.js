@@ -12,4 +12,5 @@ export const appConfig = {
   accessTokenTtlMinutes: Number(read("ACCESS_TOKEN_TTL_MINUTES", "15")),
   refreshTokenTtlDays: Number(read("REFRESH_TOKEN_TTL_DAYS", "7")),
   nodeEnv: read("NODE_ENV", "development"),
+  corsOrigin: read("CORS_ORIGIN", ""),
 };

@@ -11,14 +11,25 @@ import { healthRoutes } from "./routes/healthRoutes.js";
 import { streakRoutes } from "./routes/streakRoutes.js";
 import { membershipRoutes } from "./routes/membershipRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { appConfig } from "./config/env.js";
 
 export const createApp = () => {
   const app = express();
 
+  const allowedOrigins = appConfig.corsOrigin
+    ? appConfig.corsOrigin.split(",").map((o) => o.trim())
+    : [];
+
   app.use(helmet());
   app.use(
     cors({
-      origin: true,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
     })
   );
