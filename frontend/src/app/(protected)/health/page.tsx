@@ -6,6 +6,11 @@ import { useHealthStore } from "../../../store/health";
 import type { HealthLog } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
 import {
+  SidebarItem,
+  SidebarSection,
+  SidebarButton,
+} from "../../../components/app/SidebarItem";
+import {
   Droplets,
   Dumbbell,
   Moon,
@@ -165,116 +170,16 @@ export default function HealthPage() {
   const selectedTypeConfig = typeConfig[type];
 
   const sidebar = (
-    <div className="space-y-6">
-      <button
-        onClick={() => setShowForm(!showForm)}
-        className="group flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-4 py-3 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02] active:scale-[0.98]"
-      >
-        <Plus
-          size={18}
-          className="transition-transform group-hover:rotate-90"
-        />
-        New Log
-      </button>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-          Time Period
-        </h3>
-        <nav className="space-y-1">
-          <button
-            onClick={() => setTimeFilter("today")}
-            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              timeFilter === "today"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <Calendar size={16} />
-            Today
-          </button>
-          <button
-            onClick={() => setTimeFilter("week")}
-            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              timeFilter === "week"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <CalendarDays size={16} />
-            This Week
-          </button>
-          <button
-            onClick={() => setTimeFilter("month")}
-            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              timeFilter === "month"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <CalendarRange size={16} />
-            This Month
-          </button>
-          <button
-            onClick={() => setTimeFilter("all")}
-            className={`flex items-center gap-2.5 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              timeFilter === "all"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <Heart size={16} />
-            All Time
-          </button>
-        </nav>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-          Activity Type
-        </h3>
-        <nav className="space-y-1">
-          <button
-            onClick={() => setTypeFilter("all")}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              typeFilter === "all"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <Activity size={16} />
-              All Types
-            </span>
-            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-              {totalTodayLogs}
-            </span>
-          </button>
-          {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
-            const config = typeConfig[key];
-            return (
-              <button
-                key={key}
-                onClick={() => setTypeFilter(key)}
-                className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                  typeFilter === key
-                    ? `bg-gradient-to-r ${config.gradient} ${config.color} shadow-sm`
-                    : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  {config.icon}
-                  {config.label}
-                </span>
-                <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-                  {typeCounts[key]}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-    </div>
+    <HealthSidebar
+      showForm={showForm}
+      setShowForm={setShowForm}
+      timeFilter={timeFilter}
+      setTimeFilter={setTimeFilter}
+      typeFilter={typeFilter}
+      setTypeFilter={setTypeFilter}
+      totalTodayLogs={totalTodayLogs}
+      typeCounts={typeCounts}
+    />
   );
 
   return (
@@ -571,5 +476,88 @@ export default function HealthPage() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function HealthSidebar({
+  showForm,
+  setShowForm,
+  timeFilter,
+  setTimeFilter,
+  typeFilter,
+  setTypeFilter,
+  totalTodayLogs,
+  typeCounts,
+}: {
+  showForm: boolean;
+  setShowForm: (v: boolean) => void;
+  timeFilter: TimeFilter;
+  setTimeFilter: (f: TimeFilter) => void;
+  typeFilter: TypeFilter;
+  setTypeFilter: (f: TypeFilter) => void;
+  totalTodayLogs: number;
+  typeCounts: Record<HealthLog["type"], number>;
+}) {
+  
+
+  return (
+    <div className="space-y-6">
+      <SidebarButton
+        icon={<Plus size={18} />}
+        label="New Log"
+        onClick={() => setShowForm(!showForm)}
+      />
+
+      <SidebarSection title="Time Period">
+        <SidebarItem
+          icon={<Calendar size={16} />}
+          label="Today"
+          isActive={timeFilter === "today"}
+          onClick={() => setTimeFilter("today")}
+        />
+        <SidebarItem
+          icon={<CalendarDays size={16} />}
+          label="This Week"
+          isActive={timeFilter === "week"}
+          onClick={() => setTimeFilter("week")}
+        />
+        <SidebarItem
+          icon={<CalendarRange size={16} />}
+          label="This Month"
+          isActive={timeFilter === "month"}
+          onClick={() => setTimeFilter("month")}
+        />
+        <SidebarItem
+          icon={<Heart size={16} />}
+          label="All Time"
+          isActive={timeFilter === "all"}
+          onClick={() => setTimeFilter("all")}
+        />
+      </SidebarSection>
+
+      <SidebarSection title="Activity Type">
+        <SidebarItem
+          icon={<Activity size={16} />}
+          label="All Types"
+          count={totalTodayLogs}
+          isActive={typeFilter === "all"}
+          onClick={() => setTypeFilter("all")}
+        />
+        {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
+          const config = typeConfig[key];
+          return (
+            <SidebarItem
+              key={key}
+              icon={config.icon}
+              label={config.label}
+              count={typeCounts[key]}
+              isActive={typeFilter === key}
+              onClick={() => setTypeFilter(key)}
+              activeClassName={`bg-gradient-to-r ${config.gradient} ${config.color} shadow-sm`}
+            />
+          );
+        })}
+      </SidebarSection>
+    </div>
   );
 }

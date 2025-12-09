@@ -1,7 +1,20 @@
 "use client";
 
-import { ReactNode, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ReactNode, useState, createContext, useContext } from "react";
+import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSidebarStore } from "@/store/sidebar";
+
+type SidebarContextType = {
+  isCollapsed: boolean;
+};
+
+const SidebarContext = createContext<SidebarContextType>({
+  isCollapsed: false,
+});
+
+export function useSidebarCollapsed() {
+  return useContext(SidebarContext);
+}
 
 type AppShellProps = {
   sidebar?: ReactNode;
@@ -10,6 +23,7 @@ type AppShellProps = {
 
 export function AppShell({ sidebar, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isCollapsed, toggle } = useSidebarStore();
 
   return (
     <div className="flex h-[calc(100vh-64px)] relative">
@@ -20,6 +34,7 @@ export function AppShell({ sidebar, children }: AppShellProps) {
         />
       )}
 
+      {/* Mobile sidebar - always expanded (isCollapsed: false) */}
       {sidebar && (
         <aside
           className={`fixed inset-y-0 left-0 z-50 w-72 bg-(--card) border-r border-(--border) transform transition-transform duration-300 ease-in-out lg:hidden ${
@@ -39,14 +54,37 @@ export function AppShell({ sidebar, children }: AppShellProps) {
             </button>
           </div>
           <div className="flex-1 p-4 overflow-y-auto h-[calc(100%-60px)]">
-            {sidebar}
+            <SidebarContext.Provider value={{ isCollapsed: false }}>
+              {sidebar}
+            </SidebarContext.Provider>
           </div>
         </aside>
       )}
 
       {sidebar && (
-        <aside className="hidden lg:flex lg:flex-col w-64 xl:w-72 border-r border-(--border) bg-(--card) h-full shrink-0">
-          <div className="flex-1 p-4 overflow-y-auto">{sidebar}</div>
+        <aside
+          className={`hidden lg:flex lg:flex-col border-r border-(--border) bg-(--card) h-full shrink-0 transition-all duration-300 ease-in-out overflow-visible ${
+            isCollapsed ? "w-16" : "w-64 xl:w-72"
+          }`}
+        >
+          <div className="flex-1 p-4 overflow-y-auto">
+            <SidebarContext.Provider value={{ isCollapsed }}>
+              {sidebar}
+            </SidebarContext.Provider>
+          </div>
+          <div className="p-2 border-t border-(--border)">
+            <button
+              onClick={toggle}
+              className="flex items-center justify-center w-full p-2 rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <ChevronRight size={18} />
+              ) : (
+                <ChevronLeft size={18} />
+              )}
+            </button>
+          </div>
         </aside>
       )}
 

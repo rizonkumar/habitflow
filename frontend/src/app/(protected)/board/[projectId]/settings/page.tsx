@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useMembershipStore } from "../../../../../store/membership";
 import { useProjectStore } from "../../../../../store/projects";
 import { useAuthStore } from "../../../../../store/auth";
-import { AppShell } from "../../../../../components/app/AppShell";
+import { AppShell, useSidebarCollapsed } from "../../../../../components/app/AppShell";
+import { SidebarItem } from "../../../../../components/app/SidebarItem";
 import type { ProjectRole } from "../../../../../types/api";
 import {
   ArrowLeft,
@@ -18,6 +19,7 @@ import {
   Search,
   Loader2,
   Crown,
+  FolderKanban,
 } from "lucide-react";
 import { useToastStore } from "@/components/ui/Toast";
 
@@ -29,6 +31,110 @@ const roleConfig: Record<
   editor: { label: "Editor", icon: Edit3, color: "text-(--primary)" },
   viewer: { label: "Viewer", icon: Eye, color: "text-(--muted)" },
 };
+
+function SettingsSidebar({
+  project,
+  currentUserRole,
+  members,
+  router,
+}: {
+  project: { name: string } | undefined;
+  currentUserRole: ProjectRole | null;
+  members: { userId: string }[];
+  router: ReturnType<typeof useRouter>;
+}) {
+  const { isCollapsed } = useSidebarCollapsed();
+
+  if (isCollapsed) {
+    return (
+      <div className="space-y-2">
+        <SidebarItem
+          icon={<ArrowLeft size={16} />}
+          label="Back to Board"
+          onClick={() => router.push("/board")}
+        />
+        <SidebarItem
+          icon={<FolderKanban size={16} />}
+          label={project?.name || "Project"}
+          isActive
+        />
+        {currentUserRole && (
+          <SidebarItem
+            icon={(() => {
+              const config = roleConfig[currentUserRole];
+              const Icon = config.icon;
+              return <Icon size={16} className={config.color} />;
+            })()}
+            label={roleConfig[currentUserRole].label}
+          />
+        )}
+        <SidebarItem
+          icon={<Users size={16} />}
+          label={`${members.length} member(s)`}
+          count={members.length}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <button
+          onClick={() => router.push("/board")}
+          className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Back to Board
+        </button>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+          Project
+        </h3>
+        <div className="px-3 py-2 rounded-lg bg-(--secondary)">
+          <p className="text-sm font-medium text-(--foreground)">
+            {project?.name || "Loading..."}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+          Your Role
+        </h3>
+        <div className="px-3 py-2 rounded-lg bg-(--secondary)">
+          {currentUserRole && (
+            <div className="flex items-center gap-2">
+              {(() => {
+                const config = roleConfig[currentUserRole];
+                const Icon = config.icon;
+                return (
+                  <>
+                    <Icon size={16} className={config.color} />
+                    <span className="text-sm font-medium text-(--foreground)">
+                      {config.label}
+                    </span>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
+          Members
+        </h3>
+        <p className="text-sm text-(--muted) px-3">
+          {members.length} member(s)
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function BoardSettingsPage() {
   const params = useParams();
@@ -111,61 +217,12 @@ export default function BoardSettingsPage() {
   };
 
   const sidebar = (
-    <div className="space-y-6">
-      <div>
-        <button
-          onClick={() => router.push("/board")}
-          className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Board
-        </button>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
-          Project
-        </h3>
-        <div className="px-3 py-2 rounded-lg bg-(--secondary)">
-          <p className="text-sm font-medium text-(--foreground)">
-            {project?.name || "Loading..."}
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
-          Your Role
-        </h3>
-        <div className="px-3 py-2 rounded-lg bg-(--secondary)">
-          {currentUserRole && (
-            <div className="flex items-center gap-2">
-              {(() => {
-                const config = roleConfig[currentUserRole];
-                const Icon = config.icon;
-                return (
-                  <>
-                    <Icon size={16} className={config.color} />
-                    <span className="text-sm font-medium text-(--foreground)">
-                      {config.label}
-                    </span>
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-2">
-          Members
-        </h3>
-        <p className="text-sm text-(--muted) px-3">
-          {members.length} member(s)
-        </p>
-      </div>
-    </div>
+    <SettingsSidebar
+      project={project}
+      currentUserRole={currentUserRole}
+      members={members}
+      router={router}
+    />
   );
 
   return (
