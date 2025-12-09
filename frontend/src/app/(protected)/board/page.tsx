@@ -17,7 +17,7 @@ import {
 } from "../../../components/app/SidebarItem";
 import { TaskModal } from "../../../components/board/TaskModal";
 import { MemberFilter } from "../../../components/board/MemberFilter";
-import { Loader } from "../../../components/ui/Loader";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import {
   Plus,
   Layout,
@@ -38,6 +38,56 @@ import {
   X,
 } from "lucide-react";
 import { useToastStore } from "@/components/ui/Toast";
+
+function BoardLoadingSkeleton() {
+  return (
+    <div className="w-full space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-xl" />
+          <div>
+            <Skeleton className="h-7 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-32 rounded-xl" />
+      </div>
+
+      <div className="grid gap-4 sm:gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+        {[1, 2, 3].map((col) => (
+          <div
+            key={col}
+            className="flex flex-col rounded-2xl border-2 border-(--border) bg-(--card) overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-4 bg-(--secondary)/30">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="w-3 h-3 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="w-6 h-6 rounded-full" />
+              </div>
+              <Skeleton className="w-8 h-8 rounded-xl" />
+            </div>
+            <div className="flex-1 p-3 space-y-3 min-h-[200px]">
+              {[1, 2].map((task) => (
+                <div
+                  key={task}
+                  className="rounded-xl border-2 border-(--border) bg-(--card) p-4"
+                >
+                  <Skeleton className="h-4 w-full mb-3" />
+                  <Skeleton className="h-3 w-2/3 mb-3" />
+                  <div className="flex items-center justify-between pt-3 border-t border-(--border)">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="w-7 h-7 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const roleIcons: Record<
   ProjectRole,
@@ -161,6 +211,7 @@ export default function BoardPage() {
   const {
     columns,
     tasks,
+    loading: boardLoading,
     fetchBoard,
     initBoard,
     createTask,
@@ -360,18 +411,15 @@ export default function BoardPage() {
 
   if (initialLoad && projectsLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-(--background)">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size={32} />
-          <p className="text-sm text-(--muted)">Loading Board...</p>
-        </div>
-      </div>
+      <AppShell sidebar={<BoardSidebarSkeleton />}>
+        <BoardLoadingSkeleton />
+      </AppShell>
     );
   }
 
   return (
     <AppShell sidebar={sidebar}>
-      <div className="w-full max-w-full space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -418,9 +466,11 @@ export default function BoardPage() {
           </div>
         </div>
 
-        {columns.length > 0 ? (
+        {boardLoading && projectId ? (
+          <BoardLoadingSkeleton />
+        ) : columns.length > 0 ? (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 sm:gap-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {columns.map((column) => {
                 const columnTasks = tasksByColumn(column);
                 const colorConfig = getColumnColor(column.name);
@@ -684,6 +734,25 @@ export default function BoardPage() {
         onSubmit={createBoardProject}
       />
     </AppShell>
+  );
+}
+
+function BoardSidebarSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-7 w-14 rounded-lg" />
+      </div>
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 p-2">
+            <Skeleton className="w-8 h-8 rounded-lg" />
+            <Skeleton className="h-4 flex-1" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
