@@ -9,6 +9,12 @@ import { useBoardStore } from "../../../store/board";
 import { useMembershipStore } from "../../../store/membership";
 import type { BoardColumn, BoardTask, ProjectRole } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
+import { useSidebarCollapsed } from "../../../components/app/AppShell";
+import {
+  SidebarItem,
+  SidebarSection,
+  SidebarButton,
+} from "../../../components/app/SidebarItem";
 import { TaskModal } from "../../../components/board/TaskModal";
 import { MemberFilter } from "../../../components/board/MemberFilter";
 import {
@@ -28,6 +34,7 @@ import {
   Clock,
   Users,
   Target,
+  X,
 } from "lucide-react";
 import { useToastStore } from "@/components/ui/Toast";
 
@@ -81,6 +88,72 @@ const columnColors: Record<
   },
 };
 
+function NewProjectModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (name: string) => void;
+}) {
+  const [name, setName] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    if (name.trim()) {
+      onSubmit(name.trim());
+      setName("");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md mx-4 bg-(--card) rounded-2xl border border-(--border) shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-(--border)">
+          <h2 className="text-lg font-semibold text-(--foreground)">New Project</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4">
+          <input
+            className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+            placeholder="Project name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+              if (e.key === "Escape") onClose();
+            }}
+            autoFocus
+          />
+        </div>
+        <div className="flex gap-3 p-4 border-t border-(--border)">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-(--border) px-4 py-2.5 text-sm font-medium text-(--foreground) hover:bg-(--card-hover) transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim()}
+            className="flex-1 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-4 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl disabled:opacity-50"
+          >
+            Create Project
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BoardPage() {
   const router = useRouter();
   const { projects, fetchProjects, createProject } = useProjectStore();
@@ -105,6 +178,7 @@ export default function BoardPage() {
   const [showProjectSidebar, setShowProjectSidebar] = useState(false);
   const [selectedTask, setSelectedTask] = useState<BoardTask | null>(null);
   const [filterMemberIds, setFilterMemberIds] = useState<string[]>([]);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   const canEdit = currentUserRole === "admin" || currentUserRole === "editor";
   const isAdmin = currentUserRole === "admin";
@@ -233,235 +307,50 @@ export default function BoardPage() {
 
   const selectedProject = projects.find((p) => p.id === projectId);
 
-  const createBoardProject = async () => {
-    const name = newProjectName.trim();
-    if (!name) return;
-    const created = await createProject({ name, type: "jira" });
+  const createBoardProject = async (name?: string) => {
+    const projectName = name || newProjectName.trim();
+    if (!projectName) return;
+    const created = await createProject({ name: projectName, type: "jira" });
     setNewProjectName("");
     setShowNewProject(false);
+    setShowNewProjectModal(false);
     await fetchProjects("jira");
     setProjectId(created.id);
   };
 
   const mainSidebar = (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
-            Projects
-          </h3>
-          <button
-            onClick={() => setShowNewProject((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover) hover:border-(--primary)/30 transition-all"
-          >
-            <FolderPlus size={14} /> New
-          </button>
-        </div>
-
-        {showNewProject && (
-          <div className="mb-3 flex items-center gap-2">
-            <input
-              className="flex-1 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-              placeholder="Project name"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") createBoardProject();
-                if (e.key === "Escape") setShowNewProject(false);
-              }}
-              autoFocus
-            />
-            <button
-              className="rounded-lg bg-(--primary) text-(--primary-foreground) text-xs px-3 py-2 hover:bg-(--primary-hover) transition-colors"
-              onClick={createBoardProject}
-            >
-              Create
-            </button>
-          </div>
-        )}
-
-        <nav className="space-y-1">
-          {projects.map((project) => (
-            <button
-              key={project.id}
-              onClick={() => setProjectId(project.id)}
-              className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                projectId === project.id
-                  ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                  : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-              }`}
-            >
-              <span className="flex items-center gap-2.5 truncate">
-                <FolderKanban size={16} />
-                {project.name}
-              </span>
-            </button>
-          ))}
-          {projects.length === 0 && (
-            <div className="text-xs text-(--muted) text-center py-6 border border-dashed border-(--border) rounded-xl">
-              No projects yet
-            </div>
-          )}
-        </nav>
-      </div>
-    </div>
+    <MainBoardSidebar
+      projects={projects}
+      projectId={projectId}
+      setProjectId={setProjectId}
+      showNewProject={showNewProject}
+      setShowNewProject={setShowNewProject}
+      newProjectName={newProjectName}
+      setNewProjectName={setNewProjectName}
+      createBoardProject={() => createBoardProject()}
+      onOpenModal={() => setShowNewProjectModal(true)}
+    />
   );
 
   const projectSidebar = (
-    <div className="space-y-6">
-      <button
-        onClick={() => {
-          setProjectId("");
-          setShowProjectSidebar(false);
-        }}
-        className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors group"
-      >
-        <ArrowLeft
-          size={16}
-          className="transition-transform group-hover:-translate-x-1"
-        />
-        All Projects
-      </button>
-
-      <div className="p-4 rounded-xl bg-gradient-to-br from-(--primary)/10 to-(--accent)/5 border border-(--primary)/20">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-(--primary)/20 text-(--primary)">
-            <FolderKanban size={20} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-(--foreground) truncate">
-              {selectedProject?.name}
-            </h3>
-            {currentUserRole &&
-              (() => {
-                const config = roleIcons[currentUserRole];
-                const Icon = config.icon;
-                return (
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full ${config.bgColor} ${config.color} mt-1`}
-                  >
-                    <Icon size={10} />
-                    {config.label}
-                  </span>
-                );
-              })()}
-          </div>
-        </div>
-        <div className="flex items-center gap-4 text-xs text-(--muted)">
-          <span className="flex items-center gap-1">
-            <Users size={12} />
-            {members.length} members
-          </span>
-          <span className="flex items-center gap-1">
-            <Target size={12} />
-            {tasks.length} tasks
-          </span>
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
-            Members
-          </h3>
-          <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full text-(--muted)">
-            {members.length}
-          </span>
-        </div>
-        <div className="space-y-2">
-          {members.slice(0, 5).map((member) => {
-            const config = roleIcons[member.role];
-            const Icon = config.icon;
-            return (
-              <div
-                key={member.userId}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-(--card-hover) transition-colors"
-                title={member.name}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-(--primary)/20 to-(--accent)/10 flex items-center justify-center text-(--primary) text-xs font-semibold">
-                    {getInitials(member.name)}
-                  </div>
-                  <span className="text-sm text-(--foreground) truncate max-w-[100px]">
-                    {member.name}
-                  </span>
-                </div>
-                <span
-                  className={`${config.bgColor} ${config.color} p-1.5 rounded-lg`}
-                >
-                  <Icon size={12} />
-                </span>
-              </div>
-            );
-          })}
-          {members.length > 5 && (
-            <p className="text-xs text-(--muted) text-center py-2">
-              +{members.length - 5} more members
-            </p>
-          )}
-        </div>
-      </div>
-
-      {columns.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-            Columns
-          </h3>
-          <div className="space-y-1.5">
-            {columns.map((col) => {
-              const colorConfig = getColumnColor(col.name);
-              return (
-                <div
-                  key={col.id}
-                  className="flex items-center justify-between px-3 py-2 text-sm text-(--foreground) rounded-lg hover:bg-(--card-hover) transition-colors"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${colorConfig.bg}`}
-                    ></span>
-                    {col.name}
-                  </span>
-                  <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-                    {tasksByColumn(col).length}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-          Actions
-        </h3>
-        <div className="space-y-2">
-          {columns.length === 0 && projectId && canEdit && (
-            <button
-              onClick={handleInitBoard}
-              className="flex items-center gap-2.5 w-full rounded-xl px-4 py-3 text-sm font-medium text-(--primary-foreground) bg-gradient-to-r from-(--primary) to-blue-600 shadow-lg shadow-(--primary)/25 hover:shadow-xl hover:shadow-(--primary)/30 transition-all"
-            >
-              <Columns size={16} />
-              Initialize Board
-            </button>
-          )}
-          <button
-            onClick={() => projectId && fetchBoard(projectId)}
-            className="flex items-center gap-2.5 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-all"
-          >
-            <RefreshCw size={16} />
-            Refresh Board
-          </button>
-          <button
-            onClick={() => router.push(`/board/${projectId}/settings`)}
-            className="flex items-center gap-2.5 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-all"
-          >
-            <Settings size={16} />
-            {isAdmin ? "Manage Members" : "View Members"}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ProjectBoardSidebar
+      selectedProject={selectedProject}
+      currentUserRole={currentUserRole}
+      members={members}
+      tasks={tasks}
+      columns={columns}
+      tasksByColumn={tasksByColumn}
+      canEdit={canEdit}
+      isAdmin={isAdmin}
+      projectId={projectId}
+      setProjectId={setProjectId}
+      setShowProjectSidebar={setShowProjectSidebar}
+      handleInitBoard={handleInitBoard}
+      fetchBoard={fetchBoard}
+      router={router}
+      getColumnColor={getColumnColor}
+      getInitials={getInitials}
+    />
   );
 
   const sidebar =
@@ -775,6 +664,350 @@ export default function BoardPage() {
           onClose={() => setSelectedTask(null)}
         />
       )}
+
+      <NewProjectModal
+        isOpen={showNewProjectModal}
+        onClose={() => setShowNewProjectModal(false)}
+        onSubmit={createBoardProject}
+      />
     </AppShell>
+  );
+}
+
+function MainBoardSidebar({
+  projects,
+  projectId,
+  setProjectId,
+  showNewProject,
+  setShowNewProject,
+  newProjectName,
+  setNewProjectName,
+  createBoardProject,
+  onOpenModal,
+}: {
+  projects: { id: string; name: string }[];
+  projectId: string;
+  setProjectId: (id: string) => void;
+  showNewProject: boolean;
+  setShowNewProject: (v: boolean) => void;
+  newProjectName: string;
+  setNewProjectName: (v: string) => void;
+  createBoardProject: () => void;
+  onOpenModal: () => void;
+}) {
+  const { isCollapsed } = useSidebarCollapsed();
+
+  return (
+    <div className="space-y-6">
+      {isCollapsed && (
+        <SidebarButton
+          icon={<FolderPlus size={18} />}
+          label="New Project"
+          onClick={onOpenModal}
+        />
+      )}
+      <SidebarSection
+        title="Projects"
+        action={
+          !isCollapsed && (
+            <button
+              onClick={() => setShowNewProject(!showNewProject)}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover) hover:border-(--primary)/30 transition-all"
+            >
+              <FolderPlus size={14} /> New
+            </button>
+          )
+        }
+      >
+        {!isCollapsed && showNewProject && (
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              className="flex-1 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+              placeholder="Project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createBoardProject();
+                if (e.key === "Escape") setShowNewProject(false);
+              }}
+              autoFocus
+            />
+            <button
+              className="rounded-lg bg-(--primary) text-(--primary-foreground) text-xs px-3 py-2 hover:bg-(--primary-hover) transition-colors"
+              onClick={createBoardProject}
+            >
+              Create
+            </button>
+          </div>
+        )}
+        {projects.map((project) => (
+          <SidebarItem
+            key={project.id}
+            icon={<FolderKanban size={16} />}
+            label={project.name}
+            isActive={projectId === project.id}
+            onClick={() => setProjectId(project.id)}
+          />
+        ))}
+        {projects.length === 0 && !isCollapsed && (
+          <div className="text-xs text-(--muted) text-center py-6 border border-dashed border-(--border) rounded-xl">
+            No projects yet
+          </div>
+        )}
+      </SidebarSection>
+    </div>
+  );
+}
+
+function ProjectBoardSidebar({
+  selectedProject,
+  currentUserRole,
+  members,
+  tasks,
+  columns,
+  tasksByColumn,
+  canEdit,
+  isAdmin,
+  projectId,
+  setProjectId,
+  setShowProjectSidebar,
+  handleInitBoard,
+  fetchBoard,
+  router,
+  getColumnColor,
+  getInitials,
+}: {
+  selectedProject: { name: string } | undefined;
+  currentUserRole: ProjectRole | null;
+  members: { userId: string; name: string; role: ProjectRole }[];
+  tasks: BoardTask[];
+  columns: BoardColumn[];
+  tasksByColumn: (col: BoardColumn) => BoardTask[];
+  canEdit: boolean;
+  isAdmin: boolean;
+  projectId: string;
+  setProjectId: (id: string) => void;
+  setShowProjectSidebar: (v: boolean) => void;
+  handleInitBoard: () => void;
+  fetchBoard: (id: string) => void;
+  router: ReturnType<typeof useRouter>;
+  getColumnColor: (name: string) => { bg: string; border: string; gradient: string };
+  getInitials: (name: string) => string;
+}) {
+  const { isCollapsed } = useSidebarCollapsed();
+
+  if (isCollapsed) {
+    return (
+      <div className="space-y-6">
+        <SidebarItem
+          icon={<ArrowLeft size={16} />}
+          label="All Projects"
+          onClick={() => {
+            setProjectId("");
+            setShowProjectSidebar(false);
+          }}
+        />
+        <SidebarSection title="Actions">
+          {columns.length === 0 && projectId && canEdit && (
+            <SidebarItem
+              icon={<Columns size={16} />}
+              label="Initialize Board"
+              onClick={handleInitBoard}
+            />
+          )}
+          <SidebarItem
+            icon={<RefreshCw size={16} />}
+            label="Refresh Board"
+            onClick={() => projectId && fetchBoard(projectId)}
+          />
+          <SidebarItem
+            icon={<Settings size={16} />}
+            label={isAdmin ? "Manage Members" : "View Members"}
+            onClick={() => router.push(`/board/${projectId}/settings`)}
+          />
+        </SidebarSection>
+      </div>
+    );
+  }
+
+  const roleIcons: Record<
+    ProjectRole,
+    { icon: typeof Crown; color: string; label: string; bgColor: string }
+  > = {
+    admin: {
+      icon: Crown,
+      color: "text-amber-500",
+      label: "Admin",
+      bgColor: "bg-amber-500/10",
+    },
+    editor: {
+      icon: Edit3,
+      color: "text-blue-500",
+      label: "Editor",
+      bgColor: "bg-blue-500/10",
+    },
+    viewer: {
+      icon: Eye,
+      color: "text-slate-400",
+      label: "Viewer",
+      bgColor: "bg-slate-400/10",
+    },
+  };
+
+  return (
+    <div className="space-y-6">
+      <button
+        onClick={() => {
+          setProjectId("");
+          setShowProjectSidebar(false);
+        }}
+        className="flex items-center gap-2 text-sm text-(--muted) hover:text-(--foreground) transition-colors group"
+      >
+        <ArrowLeft
+          size={16}
+          className="transition-transform group-hover:-translate-x-1"
+        />
+        All Projects
+      </button>
+
+      <div className="p-4 rounded-xl bg-gradient-to-br from-(--primary)/10 to-(--accent)/5 border border-(--primary)/20">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-(--primary)/20 text-(--primary)">
+            <FolderKanban size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-(--foreground) truncate">
+              {selectedProject?.name}
+            </h3>
+            {currentUserRole &&
+              (() => {
+                const config = roleIcons[currentUserRole];
+                const Icon = config.icon;
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full ${config.bgColor} ${config.color} mt-1`}
+                  >
+                    <Icon size={10} />
+                    {config.label}
+                  </span>
+                );
+              })()}
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-xs text-(--muted)">
+          <span className="flex items-center gap-1">
+            <Users size={12} />
+            {members.length} members
+          </span>
+          <span className="flex items-center gap-1">
+            <Target size={12} />
+            {tasks.length} tasks
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
+            Members
+          </h3>
+          <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full text-(--muted)">
+            {members.length}
+          </span>
+        </div>
+        <div className="space-y-2">
+          {members.slice(0, 5).map((member) => {
+            const config = roleIcons[member.role];
+            const Icon = config.icon;
+            return (
+              <div
+                key={member.userId}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-(--card-hover) transition-colors"
+                title={member.name}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-(--primary)/20 to-(--accent)/10 flex items-center justify-center text-(--primary) text-xs font-semibold">
+                    {getInitials(member.name)}
+                  </div>
+                  <span className="text-sm text-(--foreground) truncate max-w-[100px]">
+                    {member.name}
+                  </span>
+                </div>
+                <span
+                  className={`${config.bgColor} ${config.color} p-1.5 rounded-lg`}
+                >
+                  <Icon size={12} />
+                </span>
+              </div>
+            );
+          })}
+          {members.length > 5 && (
+            <p className="text-xs text-(--muted) text-center py-2">
+              +{members.length - 5} more members
+            </p>
+          )}
+        </div>
+      </div>
+
+      {columns.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
+            Columns
+          </h3>
+          <div className="space-y-1.5">
+            {columns.map((col) => {
+              const colorConfig = getColumnColor(col.name);
+              return (
+                <div
+                  key={col.id}
+                  className="flex items-center justify-between px-3 py-2 text-sm text-(--foreground) rounded-lg hover:bg-(--card-hover) transition-colors"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${colorConfig.bg}`}
+                    ></span>
+                    {col.name}
+                  </span>
+                  <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
+                    {tasksByColumn(col).length}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
+          Actions
+        </h3>
+        <div className="space-y-2">
+          {columns.length === 0 && projectId && canEdit && (
+            <button
+              onClick={handleInitBoard}
+              className="flex items-center gap-2.5 w-full rounded-xl px-4 py-3 text-sm font-medium text-(--primary-foreground) bg-gradient-to-r from-(--primary) to-blue-600 shadow-lg shadow-(--primary)/25 hover:shadow-xl hover:shadow-(--primary)/30 transition-all"
+            >
+              <Columns size={16} />
+              Initialize Board
+            </button>
+          )}
+          <button
+            onClick={() => projectId && fetchBoard(projectId)}
+            className="flex items-center gap-2.5 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-all"
+          >
+            <RefreshCw size={16} />
+            Refresh Board
+          </button>
+          <button
+            onClick={() => router.push(`/board/${projectId}/settings`)}
+            className="flex items-center gap-2.5 w-full rounded-xl px-4 py-2.5 text-sm font-medium text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground) transition-all"
+          >
+            <Settings size={16} />
+            {isAdmin ? "Manage Members" : "View Members"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -7,6 +7,13 @@ import { useProjectStore } from "../../../store/projects";
 import { useTodoStore } from "../../../store/todos";
 import type { Todo } from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
+import { useSidebarCollapsed } from "../../../components/app/AppShell";
+import {
+  SidebarItem,
+  SidebarSection,
+  SidebarButton,
+  SidebarInput,
+} from "../../../components/app/SidebarItem";
 import { Skeleton } from "../../../components/ui/Skeleton";
 import { DatePicker } from "../../../components/ui/DatePicker";
 import { Select, type SelectOption } from "../../../components/ui/Select";
@@ -266,214 +273,24 @@ export default function TodosPage() {
     }
   };
 
-  const sidebar = (
-    <div className="space-y-6">
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="group flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-4 py-3 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02] active:scale-[0.98]"
-      >
-        <Plus
-          size={18}
-          className="transition-transform group-hover:rotate-90"
-        />
-        Add task
-      </button>
-
-      {/* Search */}
-      <div className="relative">
-        <Search
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-(--muted)"
-        />
-        <input
-          type="text"
-          placeholder="Search todos..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-(--input-border) bg-(--input) pl-9 pr-3 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20 transition-all"
-        />
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-          Views
-        </h3>
-        <nav className="space-y-1">
-          <button
-            onClick={() => {
-              setSelectedProject(null);
-              setFilterType("all");
-            }}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              !selectedProject && filterType === "all"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <CheckSquare size={16} />
-              All Tasks
-            </span>
-            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-              {todoCount}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedProject(null);
-              setFilterType("inbox");
-            }}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              !selectedProject && filterType === "inbox"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <InboxIcon size={16} />
-              No Project
-            </span>
-            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-              {inboxCount}
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedProject(null);
-              setFilterType("today");
-            }}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              !selectedProject && filterType === "today"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <Calendar size={16} />
-              Today
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedProject(null);
-              setFilterType("upcoming");
-            }}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              !selectedProject && filterType === "upcoming"
-                ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <CalendarDays size={16} />
-              Upcoming
-            </span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedProject(null);
-              setFilterType("completed");
-            }}
-            className={`flex items-center justify-between w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-              !selectedProject && filterType === "completed"
-                ? "bg-gradient-to-r from-(--success)/15 to-(--success)/5 text-(--success) shadow-sm"
-                : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-            }`}
-          >
-            <span className="flex items-center gap-2.5">
-              <CheckCircle2 size={16} />
-              Completed
-            </span>
-            <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full">
-              {completedCount}
-            </span>
-          </button>
-        </nav>
-      </div>
-
-      <div>
-        <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
-          Priority
-        </h3>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
-            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 shadow-sm shadow-red-500/30"></span>
-            High
-          </div>
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
-            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 shadow-sm shadow-amber-500/30"></span>
-            Medium
-          </div>
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
-            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-slate-400 to-gray-400 shadow-sm shadow-slate-400/30"></span>
-            Low
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider">
-            My Projects
-          </h3>
-          <button
-            onClick={() => setShowNewProject((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover) hover:border-(--primary)/30 transition-all"
-          >
-            <FolderPlus size={14} /> New
-          </button>
-        </div>
-
-        {showNewProject && (
-          <div className="mb-3 flex items-center gap-2">
-            <input
-              className="flex-1 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-              placeholder="Project name"
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") createTodoProject();
-                if (e.key === "Escape") setShowNewProject(false);
-              }}
-              autoFocus
-            />
-            <button
-              className="rounded-lg bg-(--primary) text-(--primary-foreground) text-xs px-3 py-2 hover:bg-(--primary-hover) transition-colors"
-              onClick={createTodoProject}
-            >
-              Create
-            </button>
-          </div>
-        )}
-
-        <nav className="space-y-1">
-          {projects.map((p) => (
-            <button
-              key={p.id}
-              onClick={() =>
-                setSelectedProject((curr) => (curr === p.id ? null : p.id))
-              }
-              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-all ${
-                selectedProject === p.id
-                  ? "bg-gradient-to-r from-(--primary)/15 to-(--primary)/5 text-(--primary) shadow-sm"
-                  : "text-(--muted) hover:bg-(--card-hover) hover:text-(--foreground)"
-              }`}
-            >
-              <span className="flex items-center gap-2.5 truncate">
-                <FolderKanban size={16} />
-                <span className="truncate">{p.name}</span>
-              </span>
-            </button>
-          ))}
-          {projects.length === 0 && (
-            <div className="text-xs text-(--muted) text-center py-4 border border-dashed border-(--border) rounded-xl">
-              No projects yet
-            </div>
-          )}
-        </nav>
-      </div>
-    </div>
-  );
+  const sidebar = <TodoSidebar
+    todoCount={todoCount}
+    inboxCount={inboxCount}
+    completedCount={completedCount}
+    filterType={filterType}
+    setFilterType={setFilterType}
+    selectedProject={selectedProject}
+    setSelectedProject={setSelectedProject}
+    searchQuery={searchQuery}
+    setSearchQuery={setSearchQuery}
+    setShowAddModal={setShowAddModal}
+    showNewProject={showNewProject}
+    setShowNewProject={setShowNewProject}
+    newProjectName={newProjectName}
+    setNewProjectName={setNewProjectName}
+    createTodoProject={createTodoProject}
+    projects={projects}
+  />;
 
   return (
     <AppShell sidebar={sidebar}>
@@ -895,5 +712,184 @@ export default function TodosPage() {
         </div>
       )}
     </AppShell>
+  );
+}
+
+function TodoSidebar({
+  todoCount,
+  inboxCount,
+  completedCount,
+  filterType,
+  setFilterType,
+  selectedProject,
+  setSelectedProject,
+  searchQuery,
+  setSearchQuery,
+  setShowAddModal,
+  showNewProject,
+  setShowNewProject,
+  newProjectName,
+  setNewProjectName,
+  createTodoProject,
+  projects,
+}: {
+  todoCount: number;
+  inboxCount: number;
+  completedCount: number;
+  filterType: FilterType;
+  setFilterType: (f: FilterType) => void;
+  selectedProject: string | null;
+  setSelectedProject: (p: string | null) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  setShowAddModal: (v: boolean) => void;
+  showNewProject: boolean;
+  setShowNewProject: (v: boolean) => void;
+  newProjectName: string;
+  setNewProjectName: (v: string) => void;
+  createTodoProject: () => void;
+  projects: { id: string; name: string }[];
+}) {
+  const { isCollapsed } = useSidebarCollapsed();
+
+  return (
+    <div className="space-y-6">
+      <SidebarButton
+        icon={<Plus size={18} />}
+        label="Add task"
+        onClick={() => setShowAddModal(true)}
+      />
+
+      <SidebarInput
+        icon={<Search size={16} />}
+        placeholder="Search todos..."
+        value={searchQuery}
+        onChange={setSearchQuery}
+      />
+
+      <SidebarSection title="Views">
+        <SidebarItem
+          icon={<CheckSquare size={16} />}
+          label="All Tasks"
+          count={todoCount}
+          isActive={!selectedProject && filterType === "all"}
+          onClick={() => {
+            setSelectedProject(null);
+            setFilterType("all");
+          }}
+        />
+        <SidebarItem
+          icon={<InboxIcon size={16} />}
+          label="No Project"
+          count={inboxCount}
+          isActive={!selectedProject && filterType === "inbox"}
+          onClick={() => {
+            setSelectedProject(null);
+            setFilterType("inbox");
+          }}
+        />
+        <SidebarItem
+          icon={<Calendar size={16} />}
+          label="Today"
+          isActive={!selectedProject && filterType === "today"}
+          onClick={() => {
+            setSelectedProject(null);
+            setFilterType("today");
+          }}
+        />
+        <SidebarItem
+          icon={<CalendarDays size={16} />}
+          label="Upcoming"
+          isActive={!selectedProject && filterType === "upcoming"}
+          onClick={() => {
+            setSelectedProject(null);
+            setFilterType("upcoming");
+          }}
+        />
+        <SidebarItem
+          icon={<CheckCircle2 size={16} />}
+          label="Completed"
+          count={completedCount}
+          isActive={!selectedProject && filterType === "completed"}
+          onClick={() => {
+            setSelectedProject(null);
+            setFilterType("completed");
+          }}
+          activeClassName="bg-gradient-to-r from-(--success)/15 to-(--success)/5 text-(--success) shadow-sm"
+        />
+      </SidebarSection>
+
+      {!isCollapsed && (
+        <div>
+          <h3 className="text-xs font-semibold text-(--muted) uppercase tracking-wider mb-3">
+            Priority
+          </h3>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+              <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 shadow-sm shadow-red-500/30"></span>
+              High
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+              <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 shadow-sm shadow-amber-500/30"></span>
+              Medium
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2 text-sm text-(--muted) rounded-lg hover:bg-(--card-hover) transition-colors cursor-pointer">
+              <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-slate-400 to-gray-400 shadow-sm shadow-slate-400/30"></span>
+              Low
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SidebarSection
+        title="My Projects"
+        action={
+          !isCollapsed && (
+            <button
+              onClick={() => setShowNewProject(!showNewProject)}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-(--foreground) border border-(--border) hover:bg-(--card-hover) hover:border-(--primary)/30 transition-all"
+            >
+              <FolderPlus size={14} /> New
+            </button>
+          )
+        }
+      >
+        {!isCollapsed && showNewProject && (
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              className="flex-1 rounded-lg border border-(--input-border) bg-(--input) px-3 py-2 text-sm text-(--foreground) outline-none focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+              placeholder="Project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createTodoProject();
+                if (e.key === "Escape") setShowNewProject(false);
+              }}
+              autoFocus
+            />
+            <button
+              className="rounded-lg bg-(--primary) text-(--primary-foreground) text-xs px-3 py-2 hover:bg-(--primary-hover) transition-colors"
+              onClick={createTodoProject}
+            >
+              Create
+            </button>
+          </div>
+        )}
+        {projects.map((p) => (
+          <SidebarItem
+            key={p.id}
+            icon={<FolderKanban size={16} />}
+            label={p.name}
+            isActive={selectedProject === p.id}
+            onClick={() => setSelectedProject(selectedProject === p.id ? null : p.id)}
+          />
+        ))}
+        {projects.length === 0 && !isCollapsed && (
+          <div className="text-xs text-(--muted) text-center py-4 border border-dashed border-(--border) rounded-xl">
+            No projects yet
+          </div>
+        )}
+      </SidebarSection>
+    </div>
   );
 }
