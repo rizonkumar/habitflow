@@ -12,4 +12,3 @@ export const serializeTodo = (todo) => ({
   createdAt: todo.createdAt,
   updatedAt: todo.updatedAt,
 });
-

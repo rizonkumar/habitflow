@@ -7,4 +7,3 @@ export const serializeUser = (user) => ({
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
-

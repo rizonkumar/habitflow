@@ -16,15 +16,27 @@ import { appConfig } from "./config/env.js";
 export const createApp = () => {
   const app = express();
 
-  const allowedOrigins = appConfig.corsOrigin
-    ? appConfig.corsOrigin.split(",").map((o) => o.trim())
+  const devFallbackOrigins = ["http://localhost:3000", "http://127.0.0.1:3000"];
+  const envOrigins = appConfig.corsOrigin
+    ? appConfig.corsOrigin
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean)
     : [];
+  const allowedOrigins =
+    appConfig.nodeEnv === "development"
+      ? [...new Set([...envOrigins, ...devFallbackOrigins])]
+      : envOrigins;
 
   app.use(helmet());
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        if (
+          !origin ||
+          allowedOrigins.length === 0 ||
+          allowedOrigins.includes(origin)
+        ) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));

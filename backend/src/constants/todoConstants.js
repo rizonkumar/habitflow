@@ -3,4 +3,3 @@ export const todoErrors = {
   notFound: { status: 404, message: "Todo not found" },
   forbidden: { status: 403, message: "Not allowed for this todo" },
 };
-

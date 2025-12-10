@@ -2,8 +2,16 @@ import mongoose from "mongoose";
 
 const healthLogSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, enum: ["water", "gym", "sleep", "diet", "custom"], required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["water", "gym", "sleep", "diet", "custom"],
+      required: true,
+    },
     amount: { type: Number, default: 0 },
     unit: { type: String, default: "" },
     metadata: { type: Object, default: {} },
@@ -13,4 +21,3 @@ const healthLogSchema = new mongoose.Schema(
 );
 
 export const HealthLog = mongoose.model("HealthLog", healthLogSchema);
-

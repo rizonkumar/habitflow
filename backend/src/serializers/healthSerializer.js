@@ -9,4 +9,3 @@ export const serializeHealthLog = (log) => ({
   createdAt: log.createdAt,
   updatedAt: log.updatedAt,
 });
-
