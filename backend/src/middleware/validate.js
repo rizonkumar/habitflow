@@ -18,4 +18,3 @@ export const validate = (schema) => (req, _res, next) => {
   req.validated = parsed.data;
   return next();
 };
-

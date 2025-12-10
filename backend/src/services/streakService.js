@@ -26,7 +26,7 @@ export const updateStreakOnActivity = async (
     ? startOfDay(new Date(streak.lastActiveDate))
     : null;
   if (last && last.getTime() === today.getTime()) {
-    return streak; // already counted today
+    return streak;
   }
 
   const diffDays = last

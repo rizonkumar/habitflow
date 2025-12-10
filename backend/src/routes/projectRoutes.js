@@ -1,73 +1,46 @@
 import { Router } from "express";
-import { z } from "zod";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
-import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
-import { serializeProject } from "../serializers/projectSerializer.js";
+import {
+  createProjectController,
+  deleteProjectController,
+  listProjectsController,
+  updateProjectController,
+} from "../controllers/projectController.js";
+import {
+  createProjectSchema,
+  listProjectsSchema,
+  updateProjectSchema,
+} from "../validators/projectValidators.js";
 
 const router = Router();
 
-const createSchema = z.object({
-  body: z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    type: z.enum(["todo", "jira", "health", "mixed"]).optional(),
-  }),
-});
+router.post(
+  "/",
+  requireAuth,
+  validate(createProjectSchema),
+  createProjectController
+);
 
-const updateSchema = z.object({
-  params: z.object({ projectId: z.string().min(1) }),
-  body: z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-  }),
-});
+router.get(
+  "/",
+  requireAuth,
+  validate(listProjectsSchema),
+  listProjectsController
+);
 
-const listSchema = z.object({
-  query: z.object({
-    type: z.enum(["todo", "jira", "health", "mixed"]).optional(),
-  }),
-});
+router.put(
+  "/:projectId",
+  requireAuth,
+  validate(updateProjectSchema),
+  updateProjectController
+);
 
-router.post("/", requireAuth, validate(createSchema), async (req, res, next) => {
-  try {
-    const project = await createProject({ ...req.validated.body, userId: req.userId });
-    res.status(201).json({ project: serializeProject(project) });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/", requireAuth, validate(listSchema), async (req, res, next) => {
-  try {
-    const projects = await listProjects(req.userId, req.validated.query);
-    res.json({ projects: projects.map(serializeProject) });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put("/:projectId", requireAuth, validate(updateSchema), async (req, res, next) => {
-  try {
-    const project = await updateProject({
-      projectId: req.validated.params.projectId,
-      userId: req.userId,
-      ...req.validated.body,
-    });
-    res.json({ project: serializeProject(project) });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:projectId", requireAuth, validate(updateSchema), async (req, res, next) => {
-  try {
-    await deleteProject({ projectId: req.validated.params.projectId, userId: req.userId });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete(
+  "/:projectId",
+  requireAuth,
+  validate(updateProjectSchema),
+  deleteProjectController
+);
 
 export const projectRoutes = router;
-

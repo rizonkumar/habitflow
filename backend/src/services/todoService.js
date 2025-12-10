@@ -7,7 +7,7 @@ import { updateStreakOnActivity } from "./streakService.js";
 import { logActivity } from "./activityService.js";
 
 const ensureProjectAccess = async (projectId, userId) => {
-  if (!projectId) return null; // unassigned todo (Inbox)
+  if (!projectId) return null;
   const project = await Project.findById(projectId);
   if (!project) {
     throw appError(

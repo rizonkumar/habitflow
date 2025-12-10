@@ -11,4 +11,3 @@ export const serializeProject = (project) => ({
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
 });
-

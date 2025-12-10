@@ -21,4 +21,3 @@ export const serializeTask = (task) => ({
   createdAt: task.createdAt,
   updatedAt: task.updatedAt,
 });
-
