@@ -475,130 +475,137 @@ export default function HealthPage() {
         </div>
 
         {showForm && (
-          <div className="rounded-2xl border-2 border-(--primary)/50 bg-(--card) overflow-hidden shadow-xl shadow-(--primary)/5 animate-in">
-            <div
-              className={`p-5 bg-gradient-to-r ${selectedTypeConfig.gradient}`}
-            >
+          <div className="rounded-2xl border border-(--border) bg-(--card) overflow-hidden shadow-2xl shadow-black/5 dark:shadow-black/20 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="px-5 py-4 bg-gradient-to-r from-(--secondary)/80 to-(--secondary)/40 border-b border-(--border)">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color}`}
-                  >
+                  <div className={`p-2.5 rounded-xl ${selectedTypeConfig.bg} text-white shadow-lg`}>
                     {selectedTypeConfig.icon}
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-(--foreground)">
-                      Log health activity
+                    <h2 className="text-base font-semibold text-(--foreground)">
+                      New {selectedTypeConfig.label} Log
                     </h2>
-                    <p className="text-sm text-(--muted)">
-                      Track your daily wellness habits
-                    </p>
+                    <p className="text-xs text-(--muted)">Track your wellness</p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowForm(false)}
-                  className="p-2 rounded-xl text-(--muted) hover:text-(--foreground) hover:bg-(--card-hover) transition-colors"
+                  className="p-2 rounded-xl text-(--muted) hover:text-(--foreground) hover:bg-(--card) transition-all"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
-            <form className="p-5" onSubmit={onAdd}>
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-(--foreground)">
-                    Activity Type
-                  </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
-                      const config = typeConfig[key];
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setType(key)}
-                          className={`flex items-center justify-center w-full aspect-square rounded-xl border-2 transition-all ${
-                            type === key
-                              ? `${config.border} ${config.bg}/20 ${config.color} shadow-lg scale-105`
-                              : "border-(--border) text-(--muted) hover:border-(--muted)"
-                          }`}
-                          title={config.label}
-                        >
-                          {config.icon}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-(--muted) text-center">
-                    Selected:{" "}
-                    <span className={selectedTypeConfig.color}>
-                      {selectedTypeConfig.label}
-                    </span>
-                  </p>
-                </div>
 
+            <div className="px-5 py-3 border-b border-(--border) bg-(--card)">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mb-1 scrollbar-none">
+                {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
+                  const config = typeConfig[key];
+                  const isActive = type === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setType(key)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                        isActive
+                          ? `${config.bg} text-white shadow-md scale-[1.02]`
+                          : "text-(--muted) hover:text-(--foreground) hover:bg-(--secondary)"
+                      }`}
+                    >
+                      {config.icon}
+                      <span>{config.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <form className="p-5" onSubmit={onAdd}>
+              <div className={`p-5 rounded-2xl mb-5 bg-gradient-to-br ${selectedTypeConfig.gradient} border ${selectedTypeConfig.border} shadow-inner`}>
                 {type === "water" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                        <Droplets size={14} className="text-blue-500" />
-                        Glasses
-                      </label>
-                      <div className="flex items-center gap-2">
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color} mb-3`}>
+                        <Droplets size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-(--foreground)">Water Intake</h3>
+                      <p className="text-xs text-(--muted) mt-1">How much water did you drink?</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <button
                           type="button"
                           onClick={() => setGlasses(Math.max(1, glasses - 1))}
-                          className="w-10 h-10 rounded-xl border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) transition-colors"
+                          className="w-12 h-12 rounded-xl bg-(--card) border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) hover:scale-105 transition-all text-xl font-medium shadow-sm"
                         >
-                          -
+                          −
                         </button>
-                        <input
-                          type="number"
-                          value={glasses}
-                          onChange={(e) => setGlasses(Math.max(1, Number(e.target.value)))}
-                          className="flex-1 rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) text-center outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <div className="w-24 text-center">
+                          <span className="text-4xl font-bold text-(--foreground)">{glasses}</span>
+                          <p className="text-xs text-(--muted) mt-1">glass{glasses > 1 ? "es" : ""}</p>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setGlasses(glasses + 1)}
-                          className="w-10 h-10 rounded-xl border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) transition-colors"
+                          className="w-12 h-12 rounded-xl bg-(--card) border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) hover:scale-105 transition-all text-xl font-medium shadow-sm"
                         >
                           +
                         </button>
                       </div>
+                      <div className="flex gap-2">
+                        {[1, 2, 4, 8].map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setGlasses(n)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                              glasses === n
+                                ? "bg-blue-500 text-white shadow-md"
+                                : "bg-(--card) text-(--muted) hover:text-(--foreground) border border-(--border)"
+                            }`}
+                          >
+                            {n} glass{n > 1 ? "es" : ""}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">
-                        Milliliters (optional)
-                      </label>
+                    <div className="pt-3 border-t border-(--border)/50">
+                      <label className="text-xs font-medium text-(--muted)">Volume in ml (optional)</label>
                       <input
                         type="number"
                         value={milliliters ?? ""}
                         onChange={(e) => setMilliliters(e.target.value ? Number(e.target.value) : undefined)}
                         placeholder="e.g. 250"
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        className="w-full h-10 mt-2 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
                       />
                     </div>
                   </div>
                 )}
 
                 {type === "gym" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                        <Dumbbell size={14} className="text-orange-500" />
-                        Workout Type
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color} mb-3`}>
+                        <Dumbbell size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-(--foreground)">Activity</h3>
+                      <p className="text-xs text-(--muted) mt-1">What workout did you do?</p>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-medium text-(--muted)">Activity Type</label>
+                      <div className="flex flex-wrap gap-2">
                         {workoutTypes.map((w) => (
                           <button
                             key={w}
                             type="button"
                             onClick={() => setWorkoutType(w)}
-                            className={`px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                            className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
                               workoutType === w
-                                ? "border-orange-500/50 bg-orange-500/10 text-orange-500"
-                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                                ? "bg-orange-500 text-white shadow-md scale-[1.02]"
+                                : "bg-(--card) text-(--muted) hover:text-(--foreground) border border-(--border) hover:border-(--muted)"
                             }`}
                           >
                             {w}
@@ -608,86 +615,113 @@ export default function HealthPage() {
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                          <Clock size={14} className="text-orange-500" />
-                          Duration (minutes)
+                        <label className="text-xs font-medium text-(--muted) flex items-center gap-1.5">
+                          <Clock size={12} className="text-orange-500" /> Duration
                         </label>
-                        <input
-                          type="number"
-                          value={durationMinutes}
-                          onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={durationMinutes}
+                            onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-4 pr-12 text-sm text-(--foreground) outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-(--muted)">min</span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          {[15, 30, 45, 60].map((n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setDurationMinutes(n)}
+                              className={`flex-1 py-1 rounded-lg text-xs font-medium transition-all ${
+                                durationMinutes === n
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-(--card) text-(--muted) border border-(--border)"
+                              }`}
+                            >
+                              {n}m
+                            </button>
+                          ))}
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                          <Flame size={14} className="text-orange-500" />
-                          Calories Burned (optional)
+                        <label className="text-xs font-medium text-(--muted) flex items-center gap-1.5">
+                          <Flame size={12} className="text-orange-500" /> Calories Burned
                         </label>
-                        <input
-                          type="number"
-                          value={caloriesBurned ?? ""}
-                          onChange={(e) => setCaloriesBurned(e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="e.g. 300"
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={caloriesBurned ?? ""}
+                            onChange={(e) => setCaloriesBurned(e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="optional"
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-4 pr-12 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-(--muted)">kcal</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">Notes (optional)</label>
+                    <div className="space-y-2 pt-2 border-t border-(--border)/50">
+                      <label className="text-xs font-medium text-(--muted)">Notes (optional)</label>
                       <input
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="How did it go?"
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        className="w-full h-10 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50 transition-all"
                       />
                     </div>
                   </div>
                 )}
 
                 {type === "sleep" && (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color} mb-3`}>
+                        <Moon size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-(--foreground)">Sleep</h3>
+                      <p className="text-xs text-(--muted) mt-1">How did you sleep?</p>
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                          <Moon size={14} className="text-indigo-500" />
-                          Bedtime
+                        <label className="text-xs font-medium text-(--muted) flex items-center gap-1.5">
+                          <Moon size={12} className="text-indigo-500" /> Bedtime
                         </label>
                         <input
                           type="datetime-local"
                           value={bedtime}
                           onChange={(e) => setBedtime(e.target.value)}
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                          className="w-full h-11 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                          <Sunrise size={14} className="text-indigo-500" />
-                          Wake Time
+                        <label className="text-xs font-medium text-(--muted) flex items-center gap-1.5">
+                          <Sunrise size={12} className="text-indigo-500" /> Wake Time
                         </label>
                         <input
                           type="datetime-local"
                           value={wakeTime}
                           onChange={(e) => setWakeTime(e.target.value)}
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                          className="w-full h-11 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all"
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">Sleep Quality</label>
-                      <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-3">
+                      <label className="text-xs font-medium text-(--muted)">How was your sleep?</label>
+                      <div className="grid grid-cols-3 gap-3">
                         {sleepQualities.map((q) => (
                           <button
                             key={q.value}
                             type="button"
                             onClick={() => setQuality(q.value)}
-                            className={`px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                            className={`py-3 rounded-xl text-sm font-semibold transition-all ${
                               quality === q.value
-                                ? `border-indigo-500/50 bg-indigo-500/10 ${q.color}`
-                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                                ? q.value === "excellent" ? "bg-green-500 text-white shadow-lg scale-[1.02]" :
+                                  q.value === "good" ? "bg-yellow-500 text-white shadow-lg scale-[1.02]" :
+                                  "bg-red-500 text-white shadow-lg scale-[1.02]"
+                                : "bg-(--card) text-(--muted) hover:text-(--foreground) border border-(--border) hover:border-(--muted)"
                             }`}
                           >
-                            {q.label}
+                            {q.value === "excellent" ? "😊" : q.value === "good" ? "😐" : "😫"} {q.label}
                           </button>
                         ))}
                       </div>
@@ -696,137 +730,168 @@ export default function HealthPage() {
                 )}
 
                 {type === "diet" && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                        <Utensils size={14} className="text-green-500" />
-                        Meal Type
-                      </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color} mb-3`}>
+                        <Utensils size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-(--foreground)">Nutrition</h3>
+                      <p className="text-xs text-(--muted) mt-1">What did you eat?</p>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-medium text-(--muted)">Meal Type</label>
+                      <div className="grid grid-cols-4 gap-2">
                         {mealTypes.map((m) => (
                           <button
                             key={m.value}
                             type="button"
                             onClick={() => setMealType(m.value)}
-                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                            className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-medium transition-all ${
                               mealType === m.value
-                                ? "border-green-500/50 bg-green-500/10 text-green-500"
-                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                                ? "bg-green-500 text-white shadow-lg scale-[1.02]"
+                                : "bg-(--card) text-(--muted) hover:text-(--foreground) border border-(--border) hover:border-(--muted)"
                             }`}
                           >
                             {m.icon}
-                            {m.label}
+                            <span>{m.label}</span>
                           </button>
                         ))}
                       </div>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                          <Flame size={14} className="text-green-500" />
-                          Calories
+                        <label className="text-xs font-medium text-(--muted) flex items-center gap-1">
+                          <Flame size={10} className="text-green-500" /> Calories
                         </label>
-                        <input
-                          type="number"
-                          value={calories}
-                          onChange={(e) => setCalories(Number(e.target.value))}
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={calories}
+                            onChange={(e) => setCalories(Number(e.target.value))}
+                            placeholder="0"
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-3 pr-10 text-sm text-(--foreground) outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--muted)">kcal</span>
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground)">Protein (g)</label>
-                        <input
-                          type="number"
-                          value={protein ?? ""}
-                          onChange={(e) => setProtein(e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="optional"
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <label className="text-xs font-medium text-(--muted)">Protein</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={protein ?? ""}
+                            onChange={(e) => setProtein(e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="-"
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-3 pr-6 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--muted)">g</span>
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground)">Carbs (g)</label>
-                        <input
-                          type="number"
-                          value={carbs ?? ""}
-                          onChange={(e) => setCarbs(e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="optional"
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <label className="text-xs font-medium text-(--muted)">Carbs</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={carbs ?? ""}
+                            onChange={(e) => setCarbs(e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="-"
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-3 pr-6 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--muted)">g</span>
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-(--foreground)">Fat (g)</label>
-                        <input
-                          type="number"
-                          value={fat ?? ""}
-                          onChange={(e) => setFat(e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="optional"
-                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                        />
+                        <label className="text-xs font-medium text-(--muted)">Fat</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={fat ?? ""}
+                            onChange={(e) => setFat(e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="-"
+                            className="w-full h-11 rounded-xl border border-(--border) bg-(--card) pl-3 pr-6 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--muted)">g</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">Description (optional)</label>
+                    <div className="space-y-2 pt-2 border-t border-(--border)/50">
+                      <label className="text-xs font-medium text-(--muted)">Description (optional)</label>
                       <input
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="What did you eat?"
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        placeholder="e.g. Grilled chicken salad"
+                        className="w-full h-10 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/50 transition-all"
                       />
                     </div>
                   </div>
                 )}
 
                 {type === "custom" && (
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
-                        <Sparkles size={14} className="text-purple-500" />
-                        Name
-                      </label>
-                      <input
-                        value={customName}
-                        onChange={(e) => setCustomName(e.target.value)}
-                        placeholder="e.g. Steps, Heart Rate"
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                      />
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${selectedTypeConfig.bg}/20 ${selectedTypeConfig.color} mb-3`}>
+                        <Sparkles size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-(--foreground)">Custom</h3>
+                      <p className="text-xs text-(--muted) mt-1">Track any metric you want</p>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">Value</label>
-                      <input
-                        type="number"
-                        value={customValue}
-                        onChange={(e) => setCustomValue(Number(e.target.value))}
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-(--foreground)">Unit</label>
-                      <input
-                        value={customUnit}
-                        onChange={(e) => setCustomUnit(e.target.value)}
-                        placeholder="e.g. steps, bpm"
-                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                      />
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-(--muted)">Metric Name</label>
+                        <input
+                          value={customName}
+                          onChange={(e) => setCustomName(e.target.value)}
+                          placeholder="e.g. Steps"
+                          className="w-full h-11 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-(--muted)">Value</label>
+                        <input
+                          type="number"
+                          value={customValue}
+                          onChange={(e) => setCustomValue(Number(e.target.value))}
+                          placeholder="0"
+                          className="w-full h-11 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-(--muted)">Unit</label>
+                        <input
+                          value={customUnit}
+                          onChange={(e) => setCustomUnit(e.target.value)}
+                          placeholder="e.g. steps"
+                          className="w-full h-11 rounded-xl border border-(--border) bg-(--card) px-4 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/50 transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-3 mt-5">
+              <div className="flex items-center justify-between pt-3 border-t border-(--border)/50">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="rounded-xl border border-(--border) px-5 py-2.5 text-sm font-medium text-(--foreground) transition-colors hover:bg-(--card-hover)"
+                  onClick={resetForm}
+                  className="text-xs text-(--muted) hover:text-(--foreground) transition-colors"
                 >
-                  Cancel
+                  Reset
                 </button>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-(--primary) to-blue-600 px-5 py-2.5 text-sm font-semibold text-(--primary-foreground) shadow-lg shadow-(--primary)/25 transition-all hover:shadow-xl hover:shadow-(--primary)/30 hover:scale-[1.02]"
-                >
-                  <Plus size={16} />
-                  Add Log
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="h-10 px-4 rounded-xl text-sm font-medium text-(--muted) hover:text-(--foreground) hover:bg-(--secondary) transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`h-10 px-6 rounded-xl text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ${selectedTypeConfig.bg}`}
+                  >
+                    Save Log
+                  </button>
+                </div>
               </div>
             </form>
           </div>
