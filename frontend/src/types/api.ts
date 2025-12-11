@@ -58,17 +58,60 @@ export type BoardTask = {
   updatedAt: string;
 };
 
-export type HealthLog = {
+type HealthLogBase = {
   id: string;
   userId: string;
-  type: "water" | "gym" | "sleep" | "diet" | "custom";
-  amount: number;
-  unit: string;
-  metadata: Record<string, unknown>;
   date: string;
   createdAt: string;
   updatedAt: string;
 };
+
+export type WaterLog = HealthLogBase & {
+  type: "water";
+  glasses: number;
+  milliliters?: number;
+};
+
+export type GymLog = HealthLogBase & {
+  type: "gym";
+  workoutType: string;
+  durationMinutes: number;
+  caloriesBurned?: number;
+  notes?: string;
+};
+
+export type SleepQuality = "low" | "good" | "excellent";
+
+export type SleepLog = HealthLogBase & {
+  type: "sleep";
+  bedtime: string;
+  wakeTime: string;
+  sleepDurationMinutes: number;
+  quality: SleepQuality;
+};
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type DietLog = HealthLogBase & {
+  type: "diet";
+  mealType: MealType;
+  calories: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  description?: string;
+};
+
+export type CustomLog = HealthLogBase & {
+  type: "custom";
+  name: string;
+  value: number;
+  unit: string;
+};
+
+export type HealthLog = WaterLog | GymLog | SleepLog | DietLog | CustomLog;
+
+export type HealthLogType = HealthLog["type"];
 
 export type Streak = {
   id: string;

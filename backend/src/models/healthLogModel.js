@@ -12,10 +12,31 @@ const healthLogSchema = new mongoose.Schema(
       enum: ["water", "gym", "sleep", "diet", "custom"],
       required: true,
     },
-    amount: { type: Number, default: 0 },
-    unit: { type: String, default: "" },
-    metadata: { type: Object, default: {} },
     date: { type: Date, required: true },
+
+    glasses: { type: Number },
+    milliliters: { type: Number },
+
+    workoutType: { type: String },
+    durationMinutes: { type: Number },
+    caloriesBurned: { type: Number },
+    notes: { type: String },
+
+    bedtime: { type: Date },
+    wakeTime: { type: Date },
+    sleepDurationMinutes: { type: Number },
+    quality: { type: String, enum: ["low", "good", "excellent"] },
+
+    mealType: { type: String, enum: ["breakfast", "lunch", "dinner", "snack"] },
+    calories: { type: Number },
+    protein: { type: Number },
+    carbs: { type: Number },
+    fat: { type: Number },
+    description: { type: String },
+
+    name: { type: String },
+    value: { type: Number },
+    unit: { type: String },
   },
   { timestamps: true }
 );

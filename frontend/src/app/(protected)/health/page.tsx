@@ -2,8 +2,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useHealthStore } from "../../../store/health";
-import type { HealthLog } from "../../../types/api";
+import { useHealthStore, CreateHealthLogPayload } from "../../../store/health";
+import type {
+  HealthLog,
+  HealthLogType,
+  SleepQuality,
+  MealType,
+} from "../../../types/api";
 import { AppShell } from "../../../components/app/AppShell";
 import {
   SidebarItem,
@@ -26,10 +31,43 @@ import {
   Activity,
   TrendingUp,
   X,
+  Flame,
+  Clock,
+  Sunrise,
+  Sun,
+  Sunset,
+  Cookie,
 } from "lucide-react";
 
 type TimeFilter = "today" | "week" | "month" | "all";
-type TypeFilter = HealthLog["type"] | "all";
+type TypeFilter = HealthLogType | "all";
+
+const workoutTypes = [
+  "Running",
+  "Walking",
+  "Weight Training",
+  "Yoga",
+  "Swimming",
+  "Cycling",
+  "HIIT",
+  "Meditation",
+  "Stretching",
+  "Other",
+];
+
+const sleepQualities: { value: SleepQuality; label: string; color: string }[] =
+  [
+    { value: "low", label: "Low", color: "text-red-500" },
+    { value: "good", label: "Good", color: "text-yellow-500" },
+    { value: "excellent", label: "Excellent", color: "text-green-500" },
+  ];
+
+const mealTypes: { value: MealType; label: string; icon: React.ReactNode }[] = [
+  { value: "breakfast", label: "Breakfast", icon: <Sunrise size={16} /> },
+  { value: "lunch", label: "Lunch", icon: <Sun size={16} /> },
+  { value: "dinner", label: "Dinner", icon: <Sunset size={16} /> },
+  { value: "snack", label: "Snack", icon: <Cookie size={16} /> },
+];
 
 function HealthLoadingSkeleton() {
   return (
@@ -118,7 +156,7 @@ function HealthSidebarSkeleton() {
 }
 
 const typeConfig: Record<
-  HealthLog["type"],
+  HealthLogType,
   {
     icon: React.ReactNode;
     color: string;
@@ -126,7 +164,6 @@ const typeConfig: Record<
     gradient: string;
     border: string;
     label: string;
-    emoji: string;
   }
 > = {
   water: {
@@ -136,7 +173,6 @@ const typeConfig: Record<
     gradient: "from-blue-500/20 to-cyan-500/10",
     border: "border-blue-500/30",
     label: "Water",
-    emoji: "💧",
   },
   gym: {
     icon: <Dumbbell size={18} />,
@@ -144,8 +180,7 @@ const typeConfig: Record<
     bg: "bg-orange-500",
     gradient: "from-orange-500/20 to-amber-500/10",
     border: "border-orange-500/30",
-    label: "Gym",
-    emoji: "🏋️",
+    label: "Activity",
   },
   sleep: {
     icon: <Moon size={18} />,
@@ -154,7 +189,6 @@ const typeConfig: Record<
     gradient: "from-indigo-500/20 to-purple-500/10",
     border: "border-indigo-500/30",
     label: "Sleep",
-    emoji: "😴",
   },
   diet: {
     icon: <Utensils size={18} />,
@@ -163,7 +197,6 @@ const typeConfig: Record<
     gradient: "from-green-500/20 to-emerald-500/10",
     border: "border-green-500/30",
     label: "Diet",
-    emoji: "🥗",
   },
   custom: {
     icon: <Sparkles size={18} />,
@@ -172,20 +205,42 @@ const typeConfig: Record<
     gradient: "from-purple-500/20 to-pink-500/10",
     border: "border-purple-500/30",
     label: "Custom",
-    emoji: "✨",
   },
 };
 
 export default function HealthPage() {
   const { logs, fetchLogs, createLog, deleteLog, loading } = useHealthStore();
-  const [type, setType] = useState<HealthLog["type"]>("water");
-  const [amount, setAmount] = useState<number | undefined>(undefined);
-  const [unit, setUnit] = useState("");
+  const [type, setType] = useState<HealthLogType>("water");
   const [showForm, setShowForm] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const searchParams = useSearchParams();
   const [initialLoad, setInitialLoad] = useState(true);
+
+  const [glasses, setGlasses] = useState(1);
+  const [milliliters, setMilliliters] = useState<number | undefined>(undefined);
+
+  const [workoutType, setWorkoutType] = useState(workoutTypes[0]);
+  const [durationMinutes, setDurationMinutes] = useState(30);
+  const [caloriesBurned, setCaloriesBurned] = useState<number | undefined>(
+    undefined
+  );
+  const [notes, setNotes] = useState("");
+
+  const [bedtime, setBedtime] = useState("");
+  const [wakeTime, setWakeTime] = useState("");
+  const [quality, setQuality] = useState<SleepQuality>("good");
+
+  const [mealType, setMealType] = useState<MealType>("breakfast");
+  const [calories, setCalories] = useState(0);
+  const [protein, setProtein] = useState<number | undefined>(undefined);
+  const [carbs, setCarbs] = useState<number | undefined>(undefined);
+  const [fat, setFat] = useState<number | undefined>(undefined);
+  const [description, setDescription] = useState("");
+
+  const [customName, setCustomName] = useState("");
+  const [customValue, setCustomValue] = useState(0);
+  const [customUnit, setCustomUnit] = useState("");
 
   useEffect(() => {
     fetchLogs().finally(() => setInitialLoad(false));
@@ -194,7 +249,7 @@ export default function HealthPage() {
   useEffect(() => {
     const add = searchParams.get("add");
     const period = searchParams.get("period") as TimeFilter | null;
-    const t = searchParams.get("type") as HealthLog["type"] | null;
+    const t = searchParams.get("type") as HealthLogType | null;
     if (period && ["today", "week", "month", "all"].includes(period)) {
       setTimeFilter(period);
     }
@@ -206,11 +261,70 @@ export default function HealthPage() {
     }
   }, [searchParams]);
 
+  const resetForm = () => {
+    setGlasses(1);
+    setMilliliters(undefined);
+    setWorkoutType(workoutTypes[0]);
+    setDurationMinutes(30);
+    setCaloriesBurned(undefined);
+    setNotes("");
+    setBedtime("");
+    setWakeTime("");
+    setQuality("good");
+    setMealType("breakfast");
+    setCalories(0);
+    setProtein(undefined);
+    setCarbs(undefined);
+    setFat(undefined);
+    setDescription("");
+    setCustomName("");
+    setCustomValue(0);
+    setCustomUnit("");
+  };
+
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createLog({ type, amount, unit });
-    setAmount(undefined);
-    setUnit("");
+    let payload: CreateHealthLogPayload;
+
+    switch (type) {
+      case "water":
+        payload = { type: "water", glasses, milliliters };
+        break;
+      case "gym":
+        payload = {
+          type: "gym",
+          workoutType,
+          durationMinutes,
+          caloriesBurned,
+          notes: notes || undefined,
+        };
+        break;
+      case "sleep":
+        payload = { type: "sleep", bedtime, wakeTime, quality };
+        break;
+      case "diet":
+        payload = {
+          type: "diet",
+          mealType,
+          calories,
+          protein,
+          carbs,
+          fat,
+          description: description || undefined,
+        };
+        break;
+      case "custom":
+        payload = {
+          type: "custom",
+          name: customName,
+          value: customValue,
+          unit: customUnit,
+        };
+        break;
+    }
+
+    await createLog(payload);
+    resetForm();
     setShowForm(false);
   };
 
@@ -248,11 +362,11 @@ export default function HealthPage() {
     (l) => new Date(l.date).toDateString() === new Date().toDateString()
   );
   const typeCounts = Object.keys(typeConfig).reduce((acc, key) => {
-    acc[key as HealthLog["type"]] = todayLogs.filter(
+    acc[key as HealthLogType] = todayLogs.filter(
       (l) => l.type === key
     ).length;
     return acc;
-  }, {} as Record<HealthLog["type"], number>);
+  }, {} as Record<HealthLogType, number>);
 
   const totalTodayLogs = todayLogs.length;
   const selectedTypeConfig = typeConfig[type];
@@ -317,7 +431,7 @@ export default function HealthPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
+          {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
             const config = typeConfig[key];
             const count = typeCounts[key];
             return (
@@ -390,32 +504,30 @@ export default function HealthPage() {
               </div>
             </div>
             <form className="p-5" onSubmit={onAdd}>
-              <div className="grid gap-4 sm:grid-cols-3 mb-5">
+              <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-(--foreground)">
                     Activity Type
                   </label>
                   <div className="grid grid-cols-5 gap-2">
-                    {(Object.keys(typeConfig) as HealthLog["type"][]).map(
-                      (key) => {
-                        const config = typeConfig[key];
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() => setType(key)}
-                            className={`flex items-center justify-center w-full aspect-square rounded-xl border-2 transition-all ${
-                              type === key
-                                ? `${config.border} ${config.bg}/20 ${config.color} shadow-lg scale-105`
-                                : "border-(--border) text-(--muted) hover:border-(--muted)"
-                            }`}
-                            title={config.label}
-                          >
-                            {config.icon}
-                          </button>
-                        );
-                      }
-                    )}
+                    {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
+                      const config = typeConfig[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setType(key)}
+                          className={`flex items-center justify-center w-full aspect-square rounded-xl border-2 transition-all ${
+                            type === key
+                              ? `${config.border} ${config.bg}/20 ${config.color} shadow-lg scale-105`
+                              : "border-(--border) text-(--muted) hover:border-(--muted)"
+                          }`}
+                          title={config.label}
+                        >
+                          {config.icon}
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-(--muted) text-center">
                     Selected:{" "}
@@ -424,35 +536,283 @@ export default function HealthPage() {
                     </span>
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-(--foreground)">
-                    Amount
-                  </label>
-                  <input
-                    type="number"
-                    value={amount ?? ""}
-                    onChange={(e) =>
-                      setAmount(
-                        e.target.value ? Number(e.target.value) : undefined
-                      )
-                    }
-                    placeholder="e.g. 500"
-                    className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-(--foreground)">
-                    Unit
-                  </label>
-                  <input
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    placeholder="ml, hrs, mins, etc."
-                    className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-3 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
-                  />
-                </div>
+
+                {type === "water" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                        <Droplets size={14} className="text-blue-500" />
+                        Glasses
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setGlasses(Math.max(1, glasses - 1))}
+                          className="w-10 h-10 rounded-xl border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) transition-colors"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          value={glasses}
+                          onChange={(e) => setGlasses(Math.max(1, Number(e.target.value)))}
+                          className="flex-1 rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) text-center outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setGlasses(glasses + 1)}
+                          className="w-10 h-10 rounded-xl border border-(--border) flex items-center justify-center text-(--foreground) hover:bg-(--secondary) transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">
+                        Milliliters (optional)
+                      </label>
+                      <input
+                        type="number"
+                        value={milliliters ?? ""}
+                        onChange={(e) => setMilliliters(e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="e.g. 250"
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {type === "gym" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                        <Dumbbell size={14} className="text-orange-500" />
+                        Workout Type
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {workoutTypes.map((w) => (
+                          <button
+                            key={w}
+                            type="button"
+                            onClick={() => setWorkoutType(w)}
+                            className={`px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                              workoutType === w
+                                ? "border-orange-500/50 bg-orange-500/10 text-orange-500"
+                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                            }`}
+                          >
+                            {w}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                          <Clock size={14} className="text-orange-500" />
+                          Duration (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          value={durationMinutes}
+                          onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                          <Flame size={14} className="text-orange-500" />
+                          Calories Burned (optional)
+                        </label>
+                        <input
+                          type="number"
+                          value={caloriesBurned ?? ""}
+                          onChange={(e) => setCaloriesBurned(e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="e.g. 300"
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">Notes (optional)</label>
+                      <input
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="How did it go?"
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {type === "sleep" && (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                          <Moon size={14} className="text-indigo-500" />
+                          Bedtime
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={bedtime}
+                          onChange={(e) => setBedtime(e.target.value)}
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                          <Sunrise size={14} className="text-indigo-500" />
+                          Wake Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={wakeTime}
+                          onChange={(e) => setWakeTime(e.target.value)}
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">Sleep Quality</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {sleepQualities.map((q) => (
+                          <button
+                            key={q.value}
+                            type="button"
+                            onClick={() => setQuality(q.value)}
+                            className={`px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                              quality === q.value
+                                ? `border-indigo-500/50 bg-indigo-500/10 ${q.color}`
+                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                            }`}
+                          >
+                            {q.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {type === "diet" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                        <Utensils size={14} className="text-green-500" />
+                        Meal Type
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {mealTypes.map((m) => (
+                          <button
+                            key={m.value}
+                            type="button"
+                            onClick={() => setMealType(m.value)}
+                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                              mealType === m.value
+                                ? "border-green-500/50 bg-green-500/10 text-green-500"
+                                : "border-(--border) text-(--muted) hover:border-(--muted)"
+                            }`}
+                          >
+                            {m.icon}
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                          <Flame size={14} className="text-green-500" />
+                          Calories
+                        </label>
+                        <input
+                          type="number"
+                          value={calories}
+                          onChange={(e) => setCalories(Number(e.target.value))}
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground)">Protein (g)</label>
+                        <input
+                          type="number"
+                          value={protein ?? ""}
+                          onChange={(e) => setProtein(e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="optional"
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground)">Carbs (g)</label>
+                        <input
+                          type="number"
+                          value={carbs ?? ""}
+                          onChange={(e) => setCarbs(e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="optional"
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-(--foreground)">Fat (g)</label>
+                        <input
+                          type="number"
+                          value={fat ?? ""}
+                          onChange={(e) => setFat(e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="optional"
+                          className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">Description (optional)</label>
+                      <input
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="What did you eat?"
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {type === "custom" && (
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground) flex items-center gap-2">
+                        <Sparkles size={14} className="text-purple-500" />
+                        Name
+                      </label>
+                      <input
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        placeholder="e.g. Steps, Heart Rate"
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">Value</label>
+                      <input
+                        type="number"
+                        value={customValue}
+                        onChange={(e) => setCustomValue(Number(e.target.value))}
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-(--foreground)">Unit</label>
+                      <input
+                        value={customUnit}
+                        onChange={(e) => setCustomUnit(e.target.value)}
+                        placeholder="e.g. steps, bpm"
+                        className="w-full rounded-xl border border-(--input-border) bg-(--input) px-4 py-2.5 text-sm text-(--foreground) placeholder:text-(--muted-foreground) outline-none transition-all focus:border-(--ring) focus:ring-2 focus:ring-(--ring)/20"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-end gap-3">
+
+              <div className="flex items-center justify-end gap-3 mt-5">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
@@ -507,22 +867,63 @@ export default function HealthPage() {
                           <div
                             className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient} opacity-30`}
                           />
-                          <div className="relative flex items-center gap-4">
+                          <div className="relative flex items-start gap-4">
                             <div
-                              className={`flex items-center justify-center w-12 h-12 rounded-xl ${config.bg}/20 ${config.color}`}
+                              className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${config.bg}/20 ${config.color}`}
                             >
                               {config.icon}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-(--foreground)">
-                                {config.label}
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-(--foreground)">
+                                  {log.type === "water" && `${log.glasses} glass${log.glasses > 1 ? "es" : ""}`}
+                                  {log.type === "gym" && log.workoutType}
+                                  {log.type === "sleep" && `${Math.floor(log.sleepDurationMinutes / 60)}h ${log.sleepDurationMinutes % 60}m`}
+                                  {log.type === "diet" && log.mealType.charAt(0).toUpperCase() + log.mealType.slice(1)}
+                                  {log.type === "custom" && log.name}
+                                </p>
+                                {log.type === "sleep" && (
+                                  <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
+                                    log.quality === "excellent" ? "bg-green-500/20 text-green-500" :
+                                    log.quality === "good" ? "bg-yellow-500/20 text-yellow-500" :
+                                    "bg-red-500/20 text-red-500"
+                                  }`}>
+                                    {log.quality}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-(--muted) mt-1">
+                                {log.type === "water" && log.milliliters && `${log.milliliters} ml`}
+                                {log.type === "gym" && (
+                                  <span className="flex items-center gap-2 flex-wrap">
+                                    <span>{log.durationMinutes} min</span>
+                                    {log.caloriesBurned && <span>• {log.caloriesBurned} cal</span>}
+                                  </span>
+                                )}
+                                {log.type === "sleep" && (
+                                  <span>
+                                    {new Date(log.bedtime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                    {" → "}
+                                    {new Date(log.wakeTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                  </span>
+                                )}
+                                {log.type === "diet" && (
+                                  <span className="flex items-center gap-2 flex-wrap">
+                                    <span>{log.calories} cal</span>
+                                    {log.protein && <span>• P: {log.protein}g</span>}
+                                    {log.carbs && <span>• C: {log.carbs}g</span>}
+                                    {log.fat && <span>• F: {log.fat}g</span>}
+                                  </span>
+                                )}
+                                {log.type === "custom" && `${log.value} ${log.unit}`}
                               </p>
-                              <p className="text-xs text-(--muted) mt-0.5">
-                                {log.amount !== undefined && log.amount !== null
-                                  ? `${log.amount} ${log.unit || ""}`
-                                  : "Activity logged"}
-                              </p>
-                              <p className="text-[10px] text-(--muted) mt-1">
+                              {log.type === "gym" && log.notes && (
+                                <p className="text-xs text-(--muted) mt-1 truncate">{log.notes}</p>
+                              )}
+                              {log.type === "diet" && log.description && (
+                                <p className="text-xs text-(--muted) mt-1 truncate">{log.description}</p>
+                              )}
+                              <p className="text-[10px] text-(--muted) mt-1.5">
                                 {new Date(log.date).toLocaleTimeString(
                                   "en-US",
                                   {
@@ -535,7 +936,7 @@ export default function HealthPage() {
                             <button
                               type="button"
                               onClick={() => deleteLog(log.id)}
-                              className="flex items-center justify-center w-9 h-9 rounded-xl text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                              className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -592,10 +993,8 @@ function HealthSidebar({
   typeFilter: TypeFilter;
   setTypeFilter: (f: TypeFilter) => void;
   totalTodayLogs: number;
-  typeCounts: Record<HealthLog["type"], number>;
+  typeCounts: Record<HealthLogType, number>;
 }) {
-  
-
   return (
     <div className="space-y-6">
       <SidebarButton
@@ -639,7 +1038,7 @@ function HealthSidebar({
           isActive={typeFilter === "all"}
           onClick={() => setTypeFilter("all")}
         />
-        {(Object.keys(typeConfig) as HealthLog["type"][]).map((key) => {
+        {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
           const config = typeConfig[key];
           return (
             <SidebarItem

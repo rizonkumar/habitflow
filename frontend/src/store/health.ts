@@ -1,32 +1,75 @@
 import { create } from "zustand";
 import { withToken } from "../lib/api";
-import type { HealthLog } from "../types/api";
+import type {
+  HealthLog,
+  HealthLogType,
+  SleepQuality,
+  MealType,
+} from "../types/api";
 import { useAuthStore } from "./auth";
 import { useToastStore } from "../components/ui/Toast";
+
+type WaterPayload = {
+  type: "water";
+  glasses: number;
+  milliliters?: number;
+  date?: string;
+};
+
+type GymPayload = {
+  type: "gym";
+  workoutType: string;
+  durationMinutes: number;
+  caloriesBurned?: number;
+  notes?: string;
+  date?: string;
+};
+
+type SleepPayload = {
+  type: "sleep";
+  bedtime: string;
+  wakeTime: string;
+  quality: SleepQuality;
+  date?: string;
+};
+
+type DietPayload = {
+  type: "diet";
+  mealType: MealType;
+  calories: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  description?: string;
+  date?: string;
+};
+
+type CustomPayload = {
+  type: "custom";
+  name: string;
+  value: number;
+  unit: string;
+  date?: string;
+};
+
+export type CreateHealthLogPayload =
+  | WaterPayload
+  | GymPayload
+  | SleepPayload
+  | DietPayload
+  | CustomPayload;
 
 type HealthState = {
   logs: HealthLog[];
   loading: boolean;
   error: string | null;
   fetchLogs: (params?: {
-    type?: HealthLog["type"];
+    type?: HealthLogType;
     from?: string;
     to?: string;
   }) => Promise<void>;
-  createLog: (payload: {
-    type: HealthLog["type"];
-    amount?: number;
-    unit?: string;
-    metadata?: Record<string, unknown>;
-    date?: string;
-  }) => Promise<HealthLog>;
-  updateLog: (payload: {
-    logId: string;
-    amount?: number;
-    unit?: string;
-    metadata?: Record<string, unknown>;
-    date?: string;
-  }) => Promise<HealthLog>;
+  createLog: (payload: CreateHealthLogPayload) => Promise<HealthLog>;
+  updateLog: (payload: { logId: string } & Partial<Omit<CreateHealthLogPayload, "type">>) => Promise<HealthLog>;
   deleteLog: (logId: string) => Promise<void>;
 };
 
@@ -57,13 +100,13 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     }
   },
 
-  createLog: async ({ type, amount, unit, metadata, date }) => {
+  createLog: async (payload) => {
     const token = useAuthStore.getState().token;
     const request = withToken(token);
     try {
       const data = await request<{ log: HealthLog }>("/api/health", {
         method: "POST",
-        body: { type, amount, unit, metadata, date },
+        body: payload,
       });
       set({ logs: [data.log, ...get().logs] });
       useToastStore.getState().push({ message: "Log added", type: "success" });
@@ -76,13 +119,13 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     }
   },
 
-  updateLog: async ({ logId, amount, unit, metadata, date }) => {
+  updateLog: async ({ logId, ...fields }) => {
     const token = useAuthStore.getState().token;
     const request = withToken(token);
     try {
       const data = await request<{ log: HealthLog }>(`/api/health/${logId}`, {
         method: "PUT",
-        body: { amount, unit, metadata, date },
+        body: fields,
       });
       set({
         logs: get().logs.map((l) => (l.id === logId ? data.log : l)),
