@@ -1,3 +1,5 @@
+import { toast } from "react-toastify";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 
 type RequestOptions = {
@@ -25,10 +27,12 @@ export const apiRequest = async <T>(
   });
 
   let data: unknown = null;
-  try {
-    data = await response.json();
-  } catch (error) {
-    console.error(error);
+  if (response.status !== 204) {
+    try {
+      data = await response.json();
+    } catch {
+      toast.error("Failed to delete log. Please try again.");
+    }
   }
 
   if (!response.ok) {

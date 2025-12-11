@@ -39,7 +39,7 @@ import {
   Cookie,
 } from "lucide-react";
 
-type TimeFilter = "today" | "week" | "month" | "all";
+type TimeFilter = "today" | "week" | "month" | "all" | "custom";
 type TypeFilter = HealthLogType | "all";
 
 const workoutTypes = [
@@ -212,10 +212,13 @@ export default function HealthPage() {
   const { logs, fetchLogs, createLog, deleteLog, loading } = useHealthStore();
   const [type, setType] = useState<HealthLogType>("water");
   const [showForm, setShowForm] = useState(false);
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const searchParams = useSearchParams();
   const [initialLoad, setInitialLoad] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const [glasses, setGlasses] = useState(1);
   const [milliliters, setMilliliters] = useState<number | undefined>(undefined);
@@ -243,6 +246,7 @@ export default function HealthPage() {
   const [customUnit, setCustomUnit] = useState("");
 
   useEffect(() => {
+    setMounted(true);
     fetchLogs().finally(() => setInitialLoad(false));
   }, [fetchLogs]);
 
@@ -342,6 +346,15 @@ export default function HealthPage() {
     } else if (timeFilter === "month") {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       result = result.filter((l) => new Date(l.date) >= monthAgo);
+    } else if (timeFilter === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter((l) => {
+        const logDate = new Date(l.date);
+        return logDate >= start && logDate <= end;
+      });
     }
 
     if (typeFilter !== "all") {
@@ -349,7 +362,7 @@ export default function HealthPage() {
     }
 
     return result;
-  }, [logs, timeFilter, typeFilter]);
+  }, [logs, timeFilter, typeFilter, customStartDate, customEndDate]);
 
   const logsByDate = filteredLogs.reduce((acc, log) => {
     const date = new Date(log.date).toLocaleDateString();
@@ -358,18 +371,31 @@ export default function HealthPage() {
     return acc;
   }, {} as Record<string, typeof logs>);
 
-  const todayLogs = logs.filter(
-    (l) => new Date(l.date).toDateString() === new Date().toDateString()
-  );
   const typeCounts = Object.keys(typeConfig).reduce((acc, key) => {
-    acc[key as HealthLogType] = todayLogs.filter(
+    acc[key as HealthLogType] = filteredLogs.filter(
       (l) => l.type === key
     ).length;
     return acc;
   }, {} as Record<HealthLogType, number>);
 
-  const totalTodayLogs = todayLogs.length;
+  const totalFilteredLogs = filteredLogs.length;
   const selectedTypeConfig = typeConfig[type];
+
+  const summaryStats = useMemo(() => {
+    const waterLogs = filteredLogs.filter((l) => l.type === "water") as Array<HealthLog & { type: "water" }>;
+    const gymLogs = filteredLogs.filter((l) => l.type === "gym") as Array<HealthLog & { type: "gym" }>;
+    const sleepLogs = filteredLogs.filter((l) => l.type === "sleep") as Array<HealthLog & { type: "sleep" }>;
+    const dietLogs = filteredLogs.filter((l) => l.type === "diet") as Array<HealthLog & { type: "diet" }>;
+
+    return {
+      totalWaterGlasses: waterLogs.reduce((sum, l) => sum + l.glasses, 0),
+      totalWorkoutMinutes: gymLogs.reduce((sum, l) => sum + l.durationMinutes, 0),
+      totalCaloriesBurned: gymLogs.reduce((sum, l) => sum + (l.caloriesBurned || 0), 0),
+      avgSleepHours: sleepLogs.length > 0 ? sleepLogs.reduce((sum, l) => sum + l.sleepDurationMinutes, 0) / sleepLogs.length / 60 : 0,
+      totalCaloriesConsumed: dietLogs.reduce((sum, l) => sum + l.calories, 0),
+      totalProtein: dietLogs.reduce((sum, l) => sum + (l.protein || 0), 0),
+    };
+  }, [filteredLogs]);
 
   const sidebar = (
     <HealthSidebar
@@ -379,18 +405,34 @@ export default function HealthPage() {
       setTimeFilter={setTimeFilter}
       typeFilter={typeFilter}
       setTypeFilter={setTypeFilter}
-      totalTodayLogs={totalTodayLogs}
+      totalFilteredLogs={totalFilteredLogs}
       typeCounts={typeCounts}
+      customStartDate={customStartDate}
+      setCustomStartDate={setCustomStartDate}
+      customEndDate={customEndDate}
+      setCustomEndDate={setCustomEndDate}
     />
   );
 
-  if (initialLoad && loading) {
+  if (!mounted || (initialLoad && loading)) {
     return (
       <AppShell sidebar={<HealthSidebarSkeleton />}>
         <HealthLoadingSkeleton />
       </AppShell>
     );
   }
+
+  const getTimeFilterLabel = () => {
+    if (timeFilter === "today") return "Today's activities";
+    if (timeFilter === "week") return "This week";
+    if (timeFilter === "month") return "This month";
+    if (timeFilter === "custom" && customStartDate && customEndDate) {
+      const start = new Date(customStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const end = new Date(customEndDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${start} - ${end}`;
+    }
+    return "All activities";
+  };
 
   return (
     <AppShell sidebar={sidebar}>
@@ -406,29 +448,76 @@ export default function HealthPage() {
                   Health
                 </h1>
                 <p className="text-sm text-(--muted)">
-                  {timeFilter === "today"
-                    ? "Today's activities"
-                    : timeFilter === "week"
-                    ? "This week"
-                    : timeFilter === "month"
-                    ? "This month"
-                    : "All activities"}
-                  {typeFilter !== "all" && ` • ${typeConfig[typeFilter].label}`}
+                  {getTimeFilterLabel()}
+                  {typeFilter !== "all" && ` | ${typeConfig[typeFilter].label}`}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-(--secondary)/50 border border-(--border)">
-            <div className="flex items-center gap-2 px-3 py-1.5 text-sm text-(--muted)">
-              <TrendingUp size={14} />
-              <span className="font-medium text-(--foreground)">
-                {totalTodayLogs}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-(--secondary)/50 border border-(--border)">
+              <TrendingUp size={14} className="text-(--muted)" />
+              <span className="font-semibold text-(--foreground)">
+                {totalFilteredLogs}
               </span>
-              <span className="hidden sm:inline">today</span>
+              <span className="text-sm text-(--muted)">logs</span>
             </div>
           </div>
         </div>
+
+        {filteredLogs.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 p-3">
+              <div className="flex items-center gap-2 text-blue-500 mb-1">
+                <Droplets size={14} />
+                <span className="text-xs font-medium">Water</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.totalWaterGlasses}</p>
+              <p className="text-xs text-(--muted)">glasses</p>
+            </div>
+            <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-3">
+              <div className="flex items-center gap-2 text-orange-500 mb-1">
+                <Clock size={14} />
+                <span className="text-xs font-medium">Activity</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.totalWorkoutMinutes}</p>
+              <p className="text-xs text-(--muted)">minutes</p>
+            </div>
+            <div className="rounded-xl border border-red-500/30 bg-gradient-to-br from-red-500/10 to-orange-500/5 p-3">
+              <div className="flex items-center gap-2 text-red-500 mb-1">
+                <Flame size={14} />
+                <span className="text-xs font-medium">Burned</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.totalCaloriesBurned}</p>
+              <p className="text-xs text-(--muted)">calories</p>
+            </div>
+            <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 to-purple-500/5 p-3">
+              <div className="flex items-center gap-2 text-indigo-500 mb-1">
+                <Moon size={14} />
+                <span className="text-xs font-medium">Sleep</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.avgSleepHours.toFixed(1)}</p>
+              <p className="text-xs text-(--muted)">avg hours</p>
+            </div>
+            <div className="rounded-xl border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/5 p-3">
+              <div className="flex items-center gap-2 text-green-500 mb-1">
+                <Utensils size={14} />
+                <span className="text-xs font-medium">Consumed</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.totalCaloriesConsumed}</p>
+              <p className="text-xs text-(--muted)">calories</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-3">
+              <div className="flex items-center gap-2 text-emerald-500 mb-1">
+                <Dumbbell size={14} />
+                <span className="text-xs font-medium">Protein</span>
+              </div>
+              <p className="text-lg font-bold text-(--foreground)">{summaryStats.totalProtein}</p>
+              <p className="text-xs text-(--muted)">grams</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {(Object.keys(typeConfig) as HealthLogType[]).map((key) => {
@@ -897,98 +986,141 @@ export default function HealthPage() {
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           {Object.entries(logsByDate).length > 0 ? (
             Object.entries(logsByDate)
               .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
               .map(([date, dateLogs]) => (
-                <div key={date}>
+                <div key={date} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-(--secondary) text-(--muted)">
-                      <Calendar size={14} />
+                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-(--secondary) to-(--secondary)/50 text-(--muted) border border-(--border)">
+                      <Calendar size={16} />
                     </div>
-                    <h3 className="text-sm font-semibold text-(--foreground)">
-                      {new Date(date).toDateString() ===
-                      new Date().toDateString()
-                        ? "Today"
-                        : new Date(date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                    </h3>
-                    <span className="text-xs font-medium bg-(--secondary) px-2 py-0.5 rounded-full text-(--muted)">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-(--foreground)">
+                        {new Date(date).toDateString() ===
+                        new Date().toDateString()
+                          ? "Today"
+                          : new Date(date).toLocaleDateString("en-US", {
+                              weekday: "long",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-semibold bg-gradient-to-r from-(--primary)/10 to-blue-500/10 text-(--primary) px-3 py-1 rounded-full border border-(--primary)/20">
                       {dateLogs.length} {dateLogs.length === 1 ? "log" : "logs"}
                     </span>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {dateLogs.map((log) => {
                       const config = typeConfig[log.type];
                       return (
                         <div
                           key={log.id}
-                          className={`group relative rounded-2xl border-2 bg-(--card) p-4 transition-all hover:shadow-lg hover:-translate-y-0.5 ${config.border}`}
+                          className={`group relative rounded-2xl border bg-(--card) overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1 ${config.border}`}
                         >
                           <div
-                            className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${config.gradient} opacity-30`}
+                            className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-40`}
                           />
-                          <div className="relative flex items-start gap-4">
-                            <div
-                              className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${config.bg}/20 ${config.color}`}
-                            >
-                              {config.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-(--foreground)">
-                                  {log.type === "water" && `${log.glasses} glass${log.glasses > 1 ? "es" : ""}`}
-                                  {log.type === "gym" && log.workoutType}
-                                  {log.type === "sleep" && `${Math.floor(log.sleepDurationMinutes / 60)}h ${log.sleepDurationMinutes % 60}m`}
-                                  {log.type === "diet" && log.mealType.charAt(0).toUpperCase() + log.mealType.slice(1)}
-                                  {log.type === "custom" && log.name}
-                                </p>
-                                {log.type === "sleep" && (
-                                  <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
-                                    log.quality === "excellent" ? "bg-green-500/20 text-green-500" :
-                                    log.quality === "good" ? "bg-yellow-500/20 text-yellow-500" :
-                                    "bg-red-500/20 text-red-500"
-                                  }`}>
-                                    {log.quality}
-                                  </span>
+                          <div className={`absolute top-0 left-0 right-0 h-1 ${config.bg}`} />
+                          <div className="relative p-4">
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`flex items-center justify-center w-11 h-11 rounded-xl shrink-0 ${config.bg}/20 ${config.color} shadow-sm`}
+                              >
+                                {config.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-bold text-(--foreground)">
+                                    {log.type === "water" && `${log.glasses} glass${log.glasses > 1 ? "es" : ""}`}
+                                    {log.type === "gym" && log.workoutType}
+                                    {log.type === "sleep" && `${Math.floor(log.sleepDurationMinutes / 60)}h ${log.sleepDurationMinutes % 60}m`}
+                                    {log.type === "diet" && log.mealType.charAt(0).toUpperCase() + log.mealType.slice(1)}
+                                    {log.type === "custom" && log.name}
+                                  </p>
+                                  {log.type === "sleep" && (
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${
+                                      log.quality === "excellent" ? "bg-green-500/20 text-green-600" :
+                                      log.quality === "good" ? "bg-yellow-500/20 text-yellow-600" :
+                                      "bg-red-500/20 text-red-600"
+                                    }`}>
+                                      {log.quality}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 space-y-1">
+                                  {log.type === "water" && log.milliliters && (
+                                    <p className="text-xs text-(--muted)">{log.milliliters} ml total</p>
+                                  )}
+                                  {log.type === "gym" && (
+                                    <div className="flex items-center gap-3 text-xs">
+                                      <span className="flex items-center gap-1 text-(--muted)">
+                                        <Clock size={12} />
+                                        {log.durationMinutes} min
+                                      </span>
+                                      {log.caloriesBurned && (
+                                        <span className="flex items-center gap-1 text-red-500">
+                                          <Flame size={12} />
+                                          {log.caloriesBurned} cal
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {log.type === "sleep" && (
+                                    <p className="text-xs text-(--muted)">
+                                      {new Date(log.bedtime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                      {" to "}
+                                      {new Date(log.wakeTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                    </p>
+                                  )}
+                                  {log.type === "diet" && (
+                                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                                      <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-600 font-medium">
+                                        {log.calories} cal
+                                      </span>
+                                      {log.protein && (
+                                        <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium">
+                                          P: {log.protein}g
+                                        </span>
+                                      )}
+                                      {log.carbs && (
+                                        <span className="px-2 py-0.5 rounded bg-orange-500/10 text-orange-600 font-medium">
+                                          C: {log.carbs}g
+                                        </span>
+                                      )}
+                                      {log.fat && (
+                                        <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 font-medium">
+                                          F: {log.fat}g
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {log.type === "custom" && (
+                                    <p className="text-xs font-medium text-(--muted)">{log.value} {log.unit}</p>
+                                  )}
+                                </div>
+                                {log.type === "gym" && log.notes && (
+                                  <p className="text-xs text-(--muted) mt-2 line-clamp-2 italic">{log.notes}</p>
+                                )}
+                                {log.type === "diet" && log.description && (
+                                  <p className="text-xs text-(--muted) mt-2 line-clamp-2 italic">{log.description}</p>
                                 )}
                               </div>
-                              <p className="text-xs text-(--muted) mt-1">
-                                {log.type === "water" && log.milliliters && `${log.milliliters} ml`}
-                                {log.type === "gym" && (
-                                  <span className="flex items-center gap-2 flex-wrap">
-                                    <span>{log.durationMinutes} min</span>
-                                    {log.caloriesBurned && <span>• {log.caloriesBurned} cal</span>}
-                                  </span>
-                                )}
-                                {log.type === "sleep" && (
-                                  <span>
-                                    {new Date(log.bedtime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                    {" → "}
-                                    {new Date(log.wakeTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                                  </span>
-                                )}
-                                {log.type === "diet" && (
-                                  <span className="flex items-center gap-2 flex-wrap">
-                                    <span>{log.calories} cal</span>
-                                    {log.protein && <span>• P: {log.protein}g</span>}
-                                    {log.carbs && <span>• C: {log.carbs}g</span>}
-                                    {log.fat && <span>• F: {log.fat}g</span>}
-                                  </span>
-                                )}
-                                {log.type === "custom" && `${log.value} ${log.unit}`}
-                              </p>
-                              {log.type === "gym" && log.notes && (
-                                <p className="text-xs text-(--muted) mt-1 truncate">{log.notes}</p>
-                              )}
-                              {log.type === "diet" && log.description && (
-                                <p className="text-xs text-(--muted) mt-1 truncate">{log.description}</p>
-                              )}
-                              <p className="text-[10px] text-(--muted) mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => deleteLog(log.id)}
+                                className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-(--border)/50">
+                              <span className={`text-[10px] font-semibold uppercase tracking-wider ${config.color}`}>
+                                {config.label}
+                              </span>
+                              <span className="text-[10px] text-(--muted)">
                                 {new Date(log.date).toLocaleTimeString(
                                   "en-US",
                                   {
@@ -996,15 +1128,8 @@ export default function HealthPage() {
                                     minute: "2-digit",
                                   }
                                 )}
-                              </p>
+                              </span>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => deleteLog(log.id)}
-                              className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 text-(--muted) opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
-                            >
-                              <Trash2 size={16} />
-                            </button>
                           </div>
                         </div>
                       );
@@ -1048,8 +1173,12 @@ function HealthSidebar({
   setTimeFilter,
   typeFilter,
   setTypeFilter,
-  totalTodayLogs,
+  totalFilteredLogs,
   typeCounts,
+  customStartDate,
+  setCustomStartDate,
+  customEndDate,
+  setCustomEndDate,
 }: {
   showForm: boolean;
   setShowForm: (v: boolean) => void;
@@ -1057,8 +1186,12 @@ function HealthSidebar({
   setTimeFilter: (f: TimeFilter) => void;
   typeFilter: TypeFilter;
   setTypeFilter: (f: TypeFilter) => void;
-  totalTodayLogs: number;
+  totalFilteredLogs: number;
   typeCounts: Record<HealthLogType, number>;
+  customStartDate: string;
+  setCustomStartDate: (v: string) => void;
+  customEndDate: string;
+  setCustomEndDate: (v: string) => void;
 }) {
   return (
     <div className="space-y-6">
@@ -1093,13 +1226,42 @@ function HealthSidebar({
           isActive={timeFilter === "all"}
           onClick={() => setTimeFilter("all")}
         />
+        <SidebarItem
+          icon={<CalendarRange size={16} />}
+          label="Custom Range"
+          isActive={timeFilter === "custom"}
+          onClick={() => setTimeFilter("custom")}
+        />
       </SidebarSection>
+
+      {timeFilter === "custom" && (
+        <div className="space-y-3 px-1">
+          <div>
+            <label className="block text-xs font-medium text-(--muted) mb-1.5">Start Date</label>
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg bg-(--secondary) border border-(--border) text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--primary)/50"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-(--muted) mb-1.5">End Date</label>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg bg-(--secondary) border border-(--border) text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--primary)/50"
+            />
+          </div>
+        </div>
+      )}
 
       <SidebarSection title="Activity Type">
         <SidebarItem
           icon={<Activity size={16} />}
           label="All Types"
-          count={totalTodayLogs}
+          count={totalFilteredLogs}
           isActive={typeFilter === "all"}
           onClick={() => setTypeFilter("all")}
         />
